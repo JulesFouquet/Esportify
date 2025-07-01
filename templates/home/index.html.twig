@@ -1,0 +1,225 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil - Esportify
+{% endblock %}
+
+{% block body %}
+	<meta name="csrf-token" content="{{ csrf_token('toggle_favorite') }}">
+
+	<div class="text-center mt-5 mb-5">
+		<h1>Bienvenue sur
+			<strong>Esportify</strong>
+			!</h1>
+		<p class="lead">La plateforme dédiée à vos tournois e-sport préférés.</p>
+	</div>
+
+	<!-- Présentation -->
+	<section class="mb-5">
+		<h2>Qui sommes-nous ?</h2>
+		<p>
+			Esportify est une plateforme dédiée aux passionnés d'e-sport...
+		</p>
+	</section>
+
+	<!-- Galerie -->
+	<section class="mb-5">
+		<h2>Galerie</h2>
+		<div id="carouselGallery" class="carousel slide" data-bs-ride="carousel">
+			<div class="carousel-inner">
+				<div class="carousel-item active">
+					<img src="{{ asset('images/esport1.jpg') }}" class="img-fluid" style="max-width: 400px;" alt="Tournoi 1">
+				</div>
+				<div class="carousel-item">
+					<img src="{{ asset('images/esport2.jpg') }}" class="img-fluid" style="max-width: 400px;" alt="Tournoi 2">
+				</div>
+				<div class="carousel-item">
+					<img src="{{ asset('images/esport3.jpg') }}" class="img-fluid" style="max-width: 400px;" alt="Tournoi 3">
+				</div>
+			</div>
+			<button class="carousel-control-prev" type="button" data-bs-target="#carouselGallery" data-bs-slide="prev">
+				<span class="carousel-control-prev-icon"></span>
+			</button>
+			<button class="carousel-control-next" type="button" data-bs-target="#carouselGallery" data-bs-slide="next">
+				<span class="carousel-control-next-icon"></span>
+			</button>
+		</div>
+	</section>
+
+	<!-- Événements -->
+	<section class="mb-5">
+		<h2>Événements e-sport à venir et en cours</h2>
+
+		<div class="mb-3">
+			<label for="sort" class="form-label">Trier par :</label>
+			<select id="sort" class="form-select w-auto d-inline-block">
+				<option value="date">Date</option>
+				<option value="players">Nombre de joueurs</option>
+				<option value="organizer">Organisateur</option>
+			</select>
+		</div>
+
+		<div id="event-list">
+			<div class="row">
+				{% for event in events %}
+					<div class="col-md-4 mb-4">
+						<div class="card shadow-sm h-100 event-card" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}">
+							<div class="card-body">
+								<h5 class="card-title">{{ event.title }}</h5>
+								<p class="card-text">
+									<strong>Participants :</strong>
+									{{ event.participantsCount }}
+									/
+									{{ event.maxPlayers }}</p>
+								<p class="card-text">
+									<strong>Début :</strong>
+									{{ event.startDateTime|date('d/m/Y H:i') }}<br>
+									<strong>Fin :</strong>
+									{{ event.endDateTime|date('d/m/Y H:i') }}</p>
+								<p class="mb-0">Organisateur :
+									<strong>{{ event.organizer.pseudo }}</strong>
+								</p>
+							</div>
+						</div>
+
+						<!-- Modal -->
+						<div class="modal fade" id="eventModal{{ event.id }}" tabindex="-1" aria-labelledby="eventModalLabel{{ event.id }}" aria-hidden="true">
+							<div class="modal-dialog modal-lg modal-dialog-centered">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="eventModalLabel{{ event.id }}">{{ event.title }}</h5>
+
+										{% if is_granted('IS_AUTHENTICATED_FULLY') %}
+											<i class="fa-star-toggle fa-star fs-4 text-warning ms-3 {{ app.user.favoriteEvents.contains(event) ? 'fa-solid' : 'fa-regular' }}" data-event-id="{{ event.id }}" title="{{ app.user.favoriteEvents.contains(event) ? 'Retirer des favoris' : 'Ajouter aux favoris' }}" style="cursor: pointer;"></i>
+										{% endif %}
+
+										<button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
+									</div>
+									<div class="modal-body">
+										<p class="lead">{{ event.description }}</p>
+										<p>
+											<strong>Début :</strong>
+											{{ event.startDateTime|date('d/m/Y H:i') }}</p>
+										<p>
+											<strong>Fin :</strong>
+											{{ event.endDateTime|date('d/m/Y H:i') }}</p>
+										<p>
+											<strong>Participants :</strong>
+											{{ event.participantsCount }}
+											/
+											{{ event.maxPlayers }}</p>
+										<p>
+											<strong>Organisateur :</strong>
+											{{ event.organizer.pseudo }}</p>
+										<p>
+											<strong>Approuvé par :</strong>
+											{{ event.validatedBy.pseudo }}</p>
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+										<a href="{{ path('app_event_show', { id: event.id }) }}" class="btn btn-primary">Voir la page de l'événement</a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				{% else %}
+					<p>Aucun événement disponible actuellement.</p>
+				{% endfor %}
+			</div>
+		</div>
+	</section>
+
+	<script>
+		function showToast(message) {
+let toast = document.getElementById('toast-notification');
+if (! toast) {
+toast = document.createElement('div');
+toast.id = 'toast-notification';
+toast.style.position = 'fixed';
+toast.style.bottom = '20px';
+toast.style.right = '20px';
+toast.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+toast.style.color = 'white';
+toast.style.padding = '10px 20px';
+toast.style.borderRadius = '5px';
+toast.style.fontSize = '14px';
+toast.style.zIndex = '1050';
+toast.style.opacity = '0';
+toast.style.transition = 'opacity 0.3s ease-in-out';
+document.body.appendChild(toast);
+}
+
+toast.textContent = message;
+toast.style.opacity = '1';
+
+setTimeout(() => {
+toast.style.opacity = '0';
+}, 2000);
+}
+
+function attachFavoriteToggleListeners() {
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+document.querySelectorAll('.fa-star-toggle').forEach(star => {
+star.addEventListener('click', function (e) {
+e.stopPropagation();
+const icon = this;
+const eventId = icon.dataset.eventId;
+
+fetch (`/favoris/toggle/${eventId}`, {
+method: 'POST',
+headers: {
+'X-Requested-With': 'XMLHttpRequest',
+'Content-Type': 'application/json',
+'X-CSRF-TOKEN': csrfToken
+},
+body: JSON.stringify({})
+}).then(response => {
+if (!response.ok) 
+throw new Error('Erreur réseau');
+
+return response.json();
+}).then(data => {
+if (data.status === 'added') {
+icon.classList.remove('fa-regular');
+icon.classList.add('fa-solid');
+icon.title = 'Retirer des favoris';
+showToast('Événement ajouté aux favoris !');
+} else if (data.status === 'removed') {
+icon.classList.remove('fa-solid');
+icon.classList.add('fa-regular');
+icon.title = 'Ajouter aux favoris';
+showToast('Événement retiré des favoris.');
+}
+}).catch(() => alert('Une erreur est survenue. Veuillez réessayer.'));
+});
+});
+}
+
+document.getElementById('sort').addEventListener('change', function () {
+const sort = this.value;
+fetch('{{ path('app_event_filter') }}?sort=' + sort, {
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+}).then(response => response.text()).then(html => {
+document.getElementById('event-list').innerHTML = html;
+attachFavoriteToggleListeners();
+});
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+attachFavoriteToggleListeners();
+});
+	</script>
+
+	<style>
+		.card:hover {
+			box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+			transform: translateY(-4px);
+			transition: all 0.2s ease-in-out;
+			cursor: pointer;
+			filter: brightness(0.95);
+		}
+	</style>
+{% endblock %}

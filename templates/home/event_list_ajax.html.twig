@@ -1,0 +1,121 @@
+<div class="row">
+	{% if events|length > 0 %}
+		{% for event in events %}
+			<div
+				class="col-md-4 mb-4">
+				<!-- Carte cliquable -->
+				<div class="card shadow-sm h-100" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}">
+					<div class="card-body">
+						<h5 class="card-title">{{ event.title }}</h5>
+						<p class="card-text">
+							<strong>Participants :</strong>
+							{{ event.participantsCount }}
+							/
+							{{ event.maxPlayers }}
+						</p>
+						<p class="card-text">
+							<strong>Début :</strong>
+							{{ event.startDateTime|date('d/m/Y H:i') }}<br>
+							<strong>Fin :</strong>
+							{{ event.endDateTime|date('d/m/Y H:i') }}
+						</p>
+						<p>
+							Organisateur :
+							<strong>{{ event.validatedBy.pseudo }}</strong>
+						</p>
+					</div>
+				</div>
+
+				<!-- Modal -->
+				<div class="modal fade" id="eventModal{{ event.id }}" tabindex="-1" aria-labelledby="eventModalLabel{{ event.id }}" aria-hidden="true">
+					<div class="modal-dialog modal-lg modal-dialog-centered">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="eventModalLabel{{ event.id }}">{{ event.title }}</h5>
+
+								{# Étoile favoris cliquable #}
+								<i class="fa-star-toggle fa-regular fa-star fs-4 text-warning ms-3" data-event-id="{{ event.id }}" title="Ajouter aux favoris" aria-label="Ajouter aux favoris" style="cursor: pointer;"></i>
+
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+							</div>
+							<div class="modal-body">
+								<p class="lead">{{ event.description }}</p>
+
+								<p>
+									<strong>Début :</strong>
+									{{ event.startDateTime|date('d/m/Y H:i') }}</p>
+								<p>
+									<strong>Fin :</strong>
+									{{ event.endDateTime|date('d/m/Y H:i') }}</p>
+								<p>
+									<strong>Participants :</strong>
+									{{ event.participantsCount }}/{{ event.maxPlayers }}</p>
+								<p>
+									<strong>Organisateur :</strong>
+									{{ event.validatedBy.pseudo }}</p>
+								<p>
+									<strong>Approuvé par :</strong>
+									{{ event.validatedBy.pseudo }}</p>
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+								<a href="{{ path('app_event_show', { id: event.id }) }}" class="btn btn-primary">Voir la page de l'événement</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		{% endfor %}
+	{% else %}
+		<p>Aucun événement disponible actuellement.</p>
+	{% endif %}
+</div>
+
+<style>
+	.card:hover {
+		box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+		transform: translateY(-4px);
+		transition: all 0.2s ease-in-out;
+		cursor: pointer;
+		filter: brightness(0.95);
+	}
+</style>
+
+<script>
+	// Attacher l'événement click aux étoiles après chargement partiel via AJAX
+function initStarToggles() {
+const stars = document.querySelectorAll('.fa-star-toggle');
+stars.forEach(star => {
+star.addEventListener('click', function (event) {
+event.stopPropagation();
+
+const eventId = this.dataset.eventId;
+const starElement = this;
+
+fetch(`/favoris/toggle/${eventId}`, {
+method: 'POST',
+headers: {
+'X-Requested-With': 'XMLHttpRequest',
+'Content-Type': 'application/json'
+}
+}).then(response => response.json()).then(data => {
+if (data.status === 'added') {
+starElement.classList.remove('fa-regular');
+starElement.classList.add('fa-solid');
+} else if (data.status === 'removed') {
+starElement.classList.remove('fa-solid');
+starElement.classList.add('fa-regular');
+}
+// Optionnel: tu peux ici aussi déclencher un événement personnalisé
+// pour mettre à jour la liste "Mes favoris" si elle est visible
+}).catch(error => {
+console.error('Erreur lors du toggle favori:', error);
+});
+});
+});
+}
+
+// Initialiser au chargement
+initStarToggles();
+</script>

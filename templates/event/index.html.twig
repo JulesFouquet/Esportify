@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tournois
+{% endblock %}
+
+{% block body %}
+	<div class="container mt-4">
+		<div class="d-flex justify-content-between align-items-center mb-4">
+			<h2>Tournois à venir / en cours</h2>
+			{% if is_granted('ROLE_USER') %}
+				<a href="{{ path('app_event_create') }}" class="btn btn-primary">Proposer un événement</a>
+			{% endif %}
+		</div>
+
+		{% if events is empty %}
+			<p>Aucun tournoi à venir ou en cours pour le moment.</p>
+		{% else %}
+			<div class="list-group">
+				{% for event in events %}
+					<div class="list-group-item">
+						<h5>{{ event.title }}</h5>
+						<p>
+							Débute le
+							{{ event.startDateTime|date('d/m/Y H:i') }}<br>
+							Se termine le
+							{{ event.endDateTime|date('d/m/Y H:i') }}
+						</p>
+						<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary">Voir plus</a>
+					</div>
+				{% endfor %}
+			</div>
+		{% endif %}
+	</div>
+{% endblock %}

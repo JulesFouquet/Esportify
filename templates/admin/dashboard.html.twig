@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Dashboard
+{% endblock %}
+
+{% block body %}
+	<div class="container mt-4">
+		<h1>Gestion des utilisateurs</h1>
+
+		{% for message in app.flashes('success') %}
+			<div class="alert alert-success">{{ message }}</div>
+		{% endfor %}
+		{% for message in app.flashes('info') %}
+			<div class="alert alert-info">{{ message }}</div>
+		{% endfor %}
+		{% for message in app.flashes('danger') %}
+			<div class="alert alert-danger">{{ message }}</div>
+		{% endfor %}
+		{% for message in app.flashes('warning') %}
+			<div class="alert alert-warning">{{ message }}</div>
+		{% endfor %}
+
+		<table class="table table-bordered mt-4">
+			<thead>
+				<tr>
+					<th>Email</th>
+					<th>Pseudo</th>
+					<th>Rôles</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for user in users %}
+					<tr>
+						<td>{{ user.email }}</td>
+						<td>{{ user.pseudo }}</td>
+						<td>
+							{% set roles = user.roles %}
+							{% if 'ROLE_ADMIN' in roles %}
+								<span class="badge bg-danger">Admin</span>
+							{% elseif 'ROLE_ORGANISATEUR' in roles %}
+								<span class="badge bg-warning text-dark">Organisateur</span>
+							{% else %}
+								<span class="badge bg-secondary">Utilisateur</span>
+							{% endif %}
+						</td>
+						<td>
+							{% if 'ROLE_ORGANISATEUR' not in user.roles %}
+								<a href="{{ path('admin_promote', {id: user.id, role: 'ROLE_ORGANISATEUR'}) }}" class="btn btn-sm btn-success">Promouvoir ORGANISATEUR</a>
+							{% else %}
+								<a href="{{ path('admin_demote', {id: user.id, role: 'ROLE_ORGANISATEUR'}) }}" class="btn btn-sm btn-warning">Rétrograder</a>
+							{% endif %}
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

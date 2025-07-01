@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un événement
+{% endblock %}
+
+{% block body %}
+	<div class="container mt-4">
+		<h2>Proposer un événement</h2>
+
+		{{ form_start(form) }}
+		{{ form_widget(form) }}
+		<button class="btn btn-success mt-3">Envoyer</button>
+		{{ form_end(form) }}
+	</div>
+{% endblock %}

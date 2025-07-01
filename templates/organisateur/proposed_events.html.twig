@@ -1,0 +1,47 @@
+{# templates/organisateur/proposed_events.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Propositions d'événements
+{% endblock %}
+
+{% block body %}
+	<h1>Propositions d'événements en attente</h1>
+
+	{% for message in app.flashes('success') %}
+		<div class="alert alert-success">{{ message }}</div>
+	{% endfor %}
+	{% for message in app.flashes('danger') %}
+		<div class="alert alert-danger">{{ message }}</div>
+	{% endfor %}
+
+	{% if proposedEvents is empty %}
+		<p>Aucune proposition d'événement en attente.</p>
+	{% else %}
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>Titre</th>
+					<th>Organisateur</th>
+					<th>Début</th>
+					<th>Fin</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for event in proposedEvents %}
+					<tr>
+						<td>{{ event.title }}</td>
+						<td>{{ event.organizer.pseudo }}</td>
+						<td>{{ event.startDateTime|date('d/m/Y H:i') }}</td>
+						<td>{{ event.endDateTime|date('d/m/Y H:i') }}</td>
+						<td>
+							<a href="{{ path('organisateur_event_approve', {'id': event.id}) }}" class="btn btn-success btn-sm">Approuver</a>
+							<a href="{{ path('organisateur_event_reject', {'id': event.id}) }}" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment rejeter cet événement ?');">Rejeter</a>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	{% endif %}
+{% endblock %}

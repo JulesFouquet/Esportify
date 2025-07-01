@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Événements à valider
+{% endblock %}
+
+{% block body %}
+	<h1>Événements en attente de validation admin</h1>
+
+	{% if pendingEvents is empty %}
+		<p>Aucun événement à valider.</p>
+	{% else %}
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>Titre</th>
+					<th>Date</th>
+					<th>Organisateur</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for event in pendingEvents %}
+					<tr>
+						<td>{{ event.title }}</td>
+						<td>{{ event.startDateTime|date('d/m/Y H:i') }}</td>
+						<td>{{ event.organizer.pseudo }}</td>
+						<td>
+							<a href="{{ path('admin_approve_event', {id: event.id}) }}" class="btn btn-success btn-sm">Valider</a>
+							<a href="{{ path('admin_reject_event', {id: event.id}) }}" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment refuser cet événement ?');">
+								Refuser
+							</a>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	{% endif %}
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+	{{ event.title }}
+{% endblock %}
+
+{% block body %}
+	<div class="container mt-5">
+		<h1>{{ event.title }}</h1>
+		<p class="lead">{{ event.description }}</p>
+
+		<p>
+			<strong>Date de début :</strong>
+			{{ event.startDateTime|date('d/m/Y H:i') }}</p>
+		<p>
+			<strong>Date de fin :</strong>
+			{{ event.endDateTime|date('d/m/Y H:i') }}</p>
+		<p>
+			<strong>Nombre de joueurs maximum :</strong>
+			{{ event.maxPlayers }}</p>
+		<p>
+			<strong>Participants inscrits :</strong>
+			{{ event.participants|length }}
+			/
+			{{ event.maxPlayers }}</p>
+		<p>
+			<strong>Événement approuvé :</strong>
+			{{ event.isApproved ? 'Oui' : 'Non' }}</p>
+		<p>
+			<strong>Événement démarré :</strong>
+			{{ event.isStarted ? 'Oui' : 'Non' }}</p>
+		<p>Approuvé par :
+			<strong>{{ event.validatedBy.pseudo }}</strong>
+		</p>
+
+		{# Boutons inscription/désinscription #}
+		{% if app.user %}
+			{% if event.isApproved %}
+				{% set isParticipant = event.participants|filter(p => p.id == app.user.id) | length > 0 %}
+				{% set maxReached = event.participants|length >= event.maxPlayers %}
+
+				{% if isParticipant %}
+					<a href="{{ path('event_unregister', {id: event.id}) }}" class="btn btn-danger mt-3">
+						Se désinscrire
+					</a>
+				{% elseif not maxReached %}
+					<a href="{{ path('event_register', {id: event.id}) }}" class="btn btn-primary mt-3">
+						S'inscrire
+					</a>
+				{% else %}
+					<button class="btn btn-secondary mt-3" disabled>Nombre max de participants atteint</button>
+				{% endif %}
+			{% else %}
+				<button class="btn btn-secondary mt-3" disabled>Événement non approuvé</button>
+			{% endif %}
+		{% else %}
+			<a href="{{ path('app_login') }}" class="btn btn-primary mt-3">Connexion pour s'inscrire</a>
+		{% endif %}
+
+		<a href="{{ path('app_event_list') }}" class="btn btn-secondary mt-3">Retour à la liste</a>
+
+		{# Discussion entre participants #}
+		{% if app.user and event.participants.contains(app.user) %}
+			<hr>
+			<h3 class="mt-5">Discussion pour l'event
+				{{ event.title }}</h3>
+
+			<div class="mb-4">
+				{{ form_start(messageForm) }}
+				{{ form_row(messageForm.content, { 'attr': {'placeholder': 'Écrivez votre message...'} }) }}
+				<button class="btn btn-success mt-2">Envoyer</button>
+				{{ form_end(messageForm) }}
+			</div>
+
+			<div class="chat-box border p-3 bg-light rounded">
+				{% for message in event.messages|sort((a, b) => a.createdAt <=> b.createdAt) %}
+					<div class="mb-2">
+						<strong>{{ message.author.pseudo }}</strong>
+						<em class="text-muted">({{ message.createdAt|date('H:i d/m/Y') }})</em>
+						:
+						<div>{{ message.content }}</div>
+					</div>
+				{% else %}
+					<p>Aucun message pour l'instant.</p>
+				{% endfor %}
+			</div>
+		{% elseif app.user %}
+			<hr>
+			<p class="text-muted mt-4">Vous devez être inscrit à l’événement pour accéder au chat.</p>
+		{% endif %}
+	</div>
+{% endblock %}

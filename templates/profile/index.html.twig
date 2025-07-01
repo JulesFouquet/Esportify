@@ -1,0 +1,119 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon profil
+{% endblock %}
+
+{% block body %}
+	<meta name="csrf-token" content="{{ csrf_token('toggle_favorite') }}">
+
+	<div class="container mt-4">
+		<h1>Bienvenue,
+			{{ user.pseudo }}
+			!</h1>
+		<p>
+			<strong>Email :</strong>
+			{{ user.email }}</p>
+		<p>
+			<strong>Date d’inscription :</strong>
+			{{ user.createdAt ? user.createdAt|date('d/m/Y') : 'N/A' }}</p>
+	</div>
+
+	<div class="container mt-5">
+		<h2>Mes favoris</h2>
+		{% if favoriteEvents is empty %}
+			<p>Aucun événement en favori.</p>
+		{% else %}
+			<div class="row">
+				{% for event in favoriteEvents %}
+					<div class="col-md-4 mb-3" data-event-id="{{ event.id }}">
+						<div class="card shadow-sm h-100">
+							<div class="card-body d-flex justify-content-between align-items-center">
+								<div>
+									<h5 class="card-title">{{ event.title }}</h5>
+									<p class="mb-0">{{ event.description|slice(0, 100) ~ '...' }}</p>
+									<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary mt-2">Voir l'événement</a>
+								</div>
+								<i class="fa-star-toggle fa-solid fa-star fs-4 text-warning" data-event-id="{{ event.id }}" title="Retirer des favoris" aria-label="Retirer des favoris" style="cursor: pointer;"></i>
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		{% endif %}
+	</div>
+
+	<div class="modal fade" id="confirmRemoveFavoriteModal" tabindex="-1" aria-labelledby="confirmRemoveFavoriteLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="confirmRemoveFavoriteLabel">Confirmer la suppression</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+				</div>
+				<div class="modal-body">
+					<p>Êtes-vous sûr de vouloir retirer cet événement de vos favoris ?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+					<button type="button" class="btn btn-danger" id="confirmRemoveFavoriteBtn">Oui, retirer</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+let eventIdToRemove = null;
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const confirmModal = new bootstrap.Modal(document.getElementById('confirmRemoveFavoriteModal'));
+
+document.querySelectorAll('.fa-star-toggle').forEach(star => {
+star.addEventListener('click', event => {
+event.stopPropagation();
+eventIdToRemove = star.dataset.eventId;
+confirmModal.show();
+});
+});
+
+document.getElementById('confirmRemoveFavoriteBtn').addEventListener('click', () => {
+if (! eventIdToRemove) 
+return;
+
+
+fetch (`/favoris/toggle/${eventIdToRemove}`, {
+method: 'POST',
+headers: {
+'X-Requested-With': 'XMLHttpRequest',
+'Content-Type': 'application/json',
+'X-CSRF-TOKEN': csrfToken
+},
+body: JSON.stringify({})
+}).then(response => {
+if (!response.ok) 
+throw new Error('Erreur réseau');
+
+return response.json();
+}).then(data => {
+if (data.status === 'removed') {
+const cardCol = document.querySelector (`.col-md-4[data-event-id="${eventIdToRemove}"]`);
+if (cardCol) 
+cardCol.remove();
+
+
+if (document.querySelectorAll('.fa-star-toggle').length === 0) {
+const container = document.querySelector('.container.mt-5');
+if (container) 
+container.innerHTML = '<p>Aucun événement en favori.</p>';
+
+}
+} else {
+alert('Une erreur est survenue. Veuillez réessayer.');
+}
+}).catch(() => alert('Une erreur est survenue. Veuillez réessayer.')). finally(() => {
+eventIdToRemove = null;
+confirmModal.hide();
+});
+});
+});
+	</script>
+
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Liste des événements
+{% endblock %}
+
+{% block body %}
+	<h1>Liste des événements</h1>
+
+	<ul>
+		{% for event in events %}
+			<li>
+				<strong>{{ event.title }}</strong>
+				- 
+								Du
+				{{ event.startDateTime|date('d/m/Y H:i') }}
+				au
+				{{ event.endDateTime|date('d/m/Y H:i') }}
+			</li>
+		{% else %}
+			<li>Aucun événement trouvé.</li>
+		{% endfor %}
+	</ul>
+
+	<a href="{{ path('app_home') }}">Retour à l'accueil</a>
+{% endblock %}
