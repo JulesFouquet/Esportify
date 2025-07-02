@@ -24,6 +24,7 @@
 			<p>Aucun événement en favori.</p>
 		{% else %}
 			<div class="row">
+				{% set now = "now"|date %}
 				{% for event in favoriteEvents %}
 					<div class="col-md-4 mb-3" data-event-id="{{ event.id }}">
 						<div class="card shadow-sm h-100">
@@ -32,6 +33,12 @@
 									<h5 class="card-title">{{ event.title }}</h5>
 									<p class="mb-0">{{ event.description|slice(0, 100) ~ '...' }}</p>
 									<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary mt-2">Voir l'événement</a>
+
+									{% if event.startDateTime <= now and event.isStarted %}
+										<button type="button" class="btn btn-success mt-2 ms-2 btn-join-event" data-event-id="{{ event.id }}">
+											Rejoindre
+										</button>
+									{% endif %}
 								</div>
 								<i class="fa-star-toggle fa-solid fa-star fs-4 text-warning" data-event-id="{{ event.id }}" title="Retirer des favoris" aria-label="Retirer des favoris" style="cursor: pointer;"></i>
 							</div>
@@ -79,6 +86,7 @@ if (! eventIdToRemove)
 return;
 
 
+
 fetch (`/favoris/toggle/${eventIdToRemove}`, {
 method: 'POST',
 headers: {
@@ -91,6 +99,7 @@ body: JSON.stringify({})
 if (!response.ok) 
 throw new Error('Erreur réseau');
 
+
 return response.json();
 }).then(data => {
 if (data.status === 'removed') {
@@ -99,10 +108,12 @@ if (cardCol)
 cardCol.remove();
 
 
+
 if (document.querySelectorAll('.fa-star-toggle').length === 0) {
 const container = document.querySelector('.container.mt-5');
 if (container) 
 container.innerHTML = '<p>Aucun événement en favori.</p>';
+
 
 }
 } else {
@@ -111,6 +122,13 @@ alert('Une erreur est survenue. Veuillez réessayer.');
 }).catch(() => alert('Une erreur est survenue. Veuillez réessayer.')). finally(() => {
 eventIdToRemove = null;
 confirmModal.hide();
+});
+});
+
+// Bouton Rejoindre : affiche popup simple
+document.querySelectorAll('.btn-join-event').forEach(button => {
+button.addEventListener('click', () => {
+alert('Événement rejoint');
 });
 });
 });

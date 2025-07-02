@@ -1,0 +1,166 @@
+{# templates/organisateur/events.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes événements
+{% endblock %}
+
+{% block stylesheets %}
+	{{ parent() }}
+	<style>
+		/* Désactive l'effet hover sur les événements quand une modale est ouverte */
+		.modal.show ~ .container .list-group-item:hover {
+			background-color: inherit !important;
+			cursor: default;
+			filter: none !important;
+		}
+
+		/* Désactive les interactions sur les événements sous l'overlay */
+		.modal-backdrop.show ~ .container .list-group-item {
+			pointer-events: none;
+		}
+
+		/* Assure que la modale est bien au-dessus */
+		.modal {
+			z-index: 1050 !important;
+		}
+
+		.modal-backdrop {
+			z-index: 1040 !important;
+		}
+	</style>
+{% endblock %}
+
+{% block body %}
+	<div class="container mt-4">
+		<div class="d-flex justify-content-between align-items-center mb-4">
+			<h2>Mes événements organisés</h2>
+			{% if is_granted('ROLE_USER') %}
+				<a href="{{ path('app_event_create') }}" class="btn btn-success">Créer un événement</a>
+			{% endif %}
+		</div>
+
+		{% if events is empty %}
+			<div class="alert alert-info">Vous n'avez pas encore créé d'événements.</div>
+		{% else %}
+			<div class="list-group">
+				{% for event in events %}
+					<div class="list-group-item mb-2">
+						<div class="d-flex justify-content-between align-items-center">
+							<div>
+								<h5>{{ event.title }}</h5>
+								<small>Du
+									{{ event.startDateTime|date('d/m/Y H:i') }}
+									au
+									{{ event.endDateTime|date('d/m/Y H:i') }}</small>
+							</div>
+							<div class="text-end">
+								{% if event.isApproved %}
+									<span class="badge bg-success">Approuvé</span>
+									{% if event.isStarted %}
+										<div class="alert alert-info mt-2 p-1 text-center" style="font-weight: bold; font-size: 0.9em;">
+											Événement en cours
+										</div>
+									{% endif %}
+								{% else %}
+									<span class="badge bg-warning text-dark">En attente</span>
+								{% endif %}
+							</div>
+						</div>
+
+						<div class="mt-2">
+							<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary btn-sm">Voir les détails</a>
+
+							{# Affichage bouton démarrer uniquement pour les organisateurs et si l'événement est approuvé #}
+							{% if is_granted('ROLE_ORGANISATEUR') and event.isApproved %}
+								{% set now = "now"|date('U') %}
+								{% set startTime = event.startDateTime|date('U') %}
+								{% set startWindow = startTime - 1800 %}
+								{# 30 minutes avant début #}
+								{% set endTime = event.endDateTime|date('U') %}
+
+								{% if now >= startWindow and now <= endTime and not event.isStarted %}
+									<form method="POST" action="{{ path('organisateur_event_start', {'id': event.id}) }}" class="d-inline ms-2">
+										<input type="hidden" name="_token" value="{{ csrf_token('start_event' ~ event.id) }}">
+										<button type="submit" class="btn btn-success btn-sm">Démarrer</button>
+									</form>
+								{% endif %}
+							{% endif %}
+
+							{% if is_granted('ROLE_ADMIN') %}
+								<button type="button" class="btn btn-warning btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#manageEventModal{{ event.id }}">
+									Gérer l'événement
+								</button>
+							{% endif %}
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		{% endif %}
+
+		<div class="mt-4">
+			<a href="{{ path('app_home') }}" class="btn btn-secondary">Retour à l'accueil</a>
+		</div>
+	</div>
+
+	{# Modales placées ici à la fin du body #}
+	{% for event in events %}
+		{% if is_granted('ROLE_ADMIN') %}
+			<div class="modal fade" id="manageEventModal{{ event.id }}" tabindex="-1" aria-labelledby="manageEventModalLabel{{ event.id }}" aria-hidden="true">
+				<div class="modal-dialog modal-lg modal-dialog-scrollable">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="manageEventModalLabel{{ event.id }}">Gérer l'événement :
+								{{ event.title }}</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+						</div>
+						<form method="POST" action="{{ path('admin_event_update', {'id': event.id}) }}">
+							<div class="modal-body">
+								<div class="mb-3">
+									<label for="title{{ event.id }}" class="form-label">Titre</label>
+									<input type="text" class="form-control" id="title{{ event.id }}" name="title" value="{{ event.title }}" required>
+								</div>
+
+								<div class="mb-3">
+									<label for="startDateTime{{ event.id }}" class="form-label">Date & heure de début</label>
+									<input type="datetime-local" class="form-control" id="startDateTime{{ event.id }}" name="startDateTime" value="{{ event.startDateTime|date('Y-m-d\TH:i') }}" required>
+								</div>
+
+								<div class="mb-3">
+									<label for="endDateTime{{ event.id }}" class="form-label">Date & heure de fin</label>
+									<input type="datetime-local" class="form-control" id="endDateTime{{ event.id }}" name="endDateTime" value="{{ event.endDateTime|date('Y-m-d\TH:i') }}" required>
+								</div>
+
+								<div class="form-check mb-3">
+									<input class="form-check-input" type="checkbox" id="isApproved{{ event.id }}" name="isApproved" {% if event.isApproved %} checked {% endif %}>
+									<label class="form-check-label" for="isApproved{{ event.id }}">Approuvé</label>
+								</div>
+
+								<div class="form-check mb-3">
+									<input class="form-check-input" type="checkbox" id="isStarted{{ event.id }}" name="isStarted" {% if event.isStarted %} checked {% endif %}>
+									<label class="form-check-label" for="isStarted{{ event.id }}">Démarré</label>
+								</div>
+
+								<div class="mb-3">
+									<label for="maxPlayers{{ event.id }}" class="form-label">Nombre maximum de joueurs</label>
+									<input type="number" min="1" class="form-control" id="maxPlayers{{ event.id }}" name="maxPlayers" value="{{ event.maxPlayers }}" required>
+								</div>
+
+								<input type="hidden" name="_token" value="{{ csrf_token('update_event' ~ event.id) }}">
+							</div>
+
+							<div class="modal-footer d-flex justify-content-between">
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+								<div>
+									<button type="submit" class="btn btn-primary me-2">Enregistrer</button>
+									<button type="button" class="btn btn-danger" onclick="if(confirm('Confirmer la suppression de cet événement ?')) { window.location='{{ path('admin_event_delete', {'id': event.id}) }}' }">
+										Supprimer
+									</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		{% endif %}
+	{% endfor %}
+{% endblock %}

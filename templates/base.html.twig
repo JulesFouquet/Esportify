@@ -40,9 +40,13 @@
 						</li>
 
 						{# Lien dashboard organisateur visible uniquement pour ROLE_ORGANISATEUR #}
-						{% if is_granted('ROLE_ORGANISATEUR') and not is_granted('ROLE_ADMIN') %}
+						{% if is_granted('ROLE_ORGANISATEUR') %}
 							<li class="nav-item">
 								<a class="nav-link" href="{{ path('organisateur_event_proposals') }}">Événements proposés</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="{{ path('organisateur_events') }}">Mes événements</a>
+								{# <-- nouveau lien #}
 							</li>
 						{% endif %}
 						{% if is_granted('ROLE_ADMIN') %}
