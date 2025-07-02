@@ -26,7 +26,7 @@ class EventController extends AbstractController
             ->where('e.isApproved = true')
             ->andWhere('e.isAdminApproved = true')
             ->andWhere('e.startDateTime >= :now OR e.isStarted = true')
-            ->andWhere('e.validatedBy IS NOT NULL') // <-- Ajout ici
+            ->andWhere('e.validatedBy IS NOT NULL')
             ->setParameter('now', $now)
             ->orderBy('e.startDateTime', 'ASC')
             ->getQuery()
@@ -39,11 +39,11 @@ class EventController extends AbstractController
 
     public function listValidatedEvents(EventRepository $eventRepository): Response
     {
-    $events = $eventRepository->findValidatedEvents();
+        $events = $eventRepository->findValidatedEvents();
 
-    return $this->render('event/list.html.twig', [
-        'events' => $events,
-    ]);
+        return $this->render('event/list.html.twig', [
+            'events' => $events,
+        ]);
     }
 
     #[Route('/event/new', name: 'app_event_create')]
@@ -76,7 +76,6 @@ class EventController extends AbstractController
     #[Route('/event/{id}', name: 'app_event_show')]
     public function show(Request $request, Event $event, EntityManagerInterface $em): Response
     {
-        // Rediriger si l’événement n’est pas validé par les deux
         if (!$event->isApproved() || !$event->isAdminApproved()) {
             throw $this->createAccessDeniedException("Cet événement n'est pas encore publié.");
         }
@@ -145,5 +144,65 @@ class EventController extends AbstractController
         }
 
         return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+    }
+
+    #[Route('/event/{id}/edit', name: 'user_event_update')]
+    #[IsGranted('ROLE_USER')]
+    public function update(Request $request, Event $event, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+
+        if ($event->getOrganizer() !== $user) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas modifier cet événement.');
+        }
+
+        if ($event->isStarted()) {
+            $this->addFlash('error', 'Vous ne pouvez plus modifier un événement déjà démarré.');
+            return $this->redirectToRoute('app_profile');
+        }
+
+        $form = $this->createForm(EventType::class, $event);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Remettre l'événement en attente de validation
+            $event->setIsApproved(false);
+            // Optionnel, si tu veux aussi reset admin validation
+            $event->setIsAdminApproved(false);
+
+            $em->flush();
+
+            $this->addFlash('success', 'Événement modifié avec succès. Il est à nouveau en attente de validation.');
+
+            return $this->redirectToRoute('app_profile');
+        }
+
+        return $this->render('event/edit.html.twig', [
+            'form' => $form->createView(),
+            'event' => $event,
+        ]);
+    }
+
+    #[Route('/event/{id}/delete', name: 'user_event_delete')]
+    #[IsGranted('ROLE_USER')]
+    public function delete(Event $event, EntityManagerInterface $em): RedirectResponse
+    {
+        $user = $this->getUser();
+
+        if ($event->getOrganizer() !== $user) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer cet événement.');
+        }
+
+        if ($event->isStarted()) {
+            $this->addFlash('error', 'Vous ne pouvez plus supprimer un événement déjà démarré.');
+            return $this->redirectToRoute('app_profile');
+        }
+
+        $em->remove($event);
+        $em->flush();
+
+        $this->addFlash('success', 'Événement supprimé avec succès.');
+
+        return $this->redirectToRoute('app_profile');
     }
 }

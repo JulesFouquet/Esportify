@@ -1,137 +1,244 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Mon profil
+{% block title %}Profil -
+	{{ user.userIdentifier }}
 {% endblock %}
 
 {% block body %}
-	<meta name="csrf-token" content="{{ csrf_token('toggle_favorite') }}">
-
 	<div class="container mt-4">
-		<h1>Bienvenue,
-			{{ user.pseudo }}
-			!</h1>
-		<p>
-			<strong>Email :</strong>
-			{{ user.email }}</p>
-		<p>
-			<strong>Date d’inscription :</strong>
-			{{ user.createdAt ? user.createdAt|date('d/m/Y') : 'N/A' }}</p>
-	</div>
+		<h1>Profil de
+			{{ user.userIdentifier }}</h1>
 
-	<div class="container mt-5">
-		<h2>Mes favoris</h2>
-		{% if favoriteEvents is empty %}
-			<p>Aucun événement en favori.</p>
-		{% else %}
-			<div class="row">
-				{% set now = "now"|date %}
-				{% for event in favoriteEvents %}
-					<div class="col-md-4 mb-3" data-event-id="{{ event.id }}">
-						<div class="card shadow-sm h-100">
-							<div class="card-body d-flex justify-content-between align-items-center">
-								<div>
+		{# Section Favoris #}
+		<section class="mb-5">
+			<h2>Mes événements favoris</h2>
+			{% if favoriteEvents is empty %}
+				<p>Vous n'avez pas encore ajouté d'événement en favori.</p>
+			{% else %}
+				<div class="row">
+					{% for event in favoriteEvents %}
+						<div class="col-md-4 mb-3">
+							<div class="card h-100 shadow-sm">
+								<div class="card-body">
 									<h5 class="card-title">{{ event.title }}</h5>
-									<p class="mb-0">{{ event.description|slice(0, 100) ~ '...' }}</p>
-									<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary mt-2">Voir l'événement</a>
-
-									{% if event.startDateTime <= now and event.isStarted %}
-										<button type="button" class="btn btn-success mt-2 ms-2 btn-join-event" data-event-id="{{ event.id }}">
-											Rejoindre
-										</button>
-									{% endif %}
+									<p>{{ event.description|slice(0, 100) ~ '...' }}</p>
+									<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary">Voir l'événement</a>
 								</div>
-								<i class="fa-star-toggle fa-solid fa-star fs-4 text-warning" data-event-id="{{ event.id }}" title="Retirer des favoris" aria-label="Retirer des favoris" style="cursor: pointer;"></i>
 							</div>
 						</div>
-					</div>
-				{% endfor %}
-			</div>
-		{% endif %}
+					{% endfor %}
+				</div>
+			{% endif %}
+		</section>
+
+		{# Section Événements créés #}
+		<section>
+			<h2 class="mb-3">Mes événements créés</h2>
+
+			{# Validés #}
+			{% if approvedEvents is empty %}
+				<p>Vous n'avez aucun événement validé.</p>
+			{% else %}
+				<h3>Événements validés</h3>
+				<div class="row mb-4">
+					{% for event in approvedEvents %}
+						{# Calcul du statut #}
+						{% set now = "now"|date('Y-m-d H:i:s') %}
+						{% set endDate = event.endDateTime ? event.endDateTime|date('Y-m-d H:i:s') : null %}
+						{% set isFinished = endDate and endDate < now %}
+						{% set isOngoing = event.startDateTime and event.startDateTime|date('Y-m-d H:i:s') <= now and not isFinished %}
+
+						<div class="col-md-4 mb-3">
+							<div class="card shadow-sm h-100 {% if isFinished %} bg-light text-muted {% endif %}">
+								<div class="card-body">
+									<h5 class="card-title">{{ event.title }}</h5>
+									<span class="badge bg-success">Validé</span>
+									<p class="mb-0 mt-2">{{ event.description|slice(0, 100) ~ '...' }}</p>
+
+									{% if isFinished %}
+										<div class="mt-3">
+											<span class="text-danger fw-bold">Événement terminé</span>
+										</div>
+									{% endif %}
+
+									<div class="d-flex gap-2 mt-2">
+
+										<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary">Voir l'événement</a>
+
+										{# Afficher le bouton "Gérer l'événement" seulement si l'événement n'est pas en cours ou terminé #}
+										{% if not isOngoing and not isFinished and (
+                                            event.id in modifiableEventIds
+                                            or is_granted('ROLE_ORGANISATEUR')
+                                            or is_granted('ROLE_ADMIN') 
+                                            or is_granted('ROLE_USER')
+                                        ) %}
+											<button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#manageUserEventModal{{ event.id }}">Gérer l'événement</button>
+										{% endif %}
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{% if not isOngoing and not isFinished and (
+                            event.id in modifiableEventIds
+                            or is_granted('ROLE_ORGANISATEUR')
+                            or is_granted('ROLE_ADMIN') 
+                            or is_granted('ROLE_USER')
+                        ) %}
+							{# Modale de gestion utilisateur #}
+							<div class="modal fade" id="manageUserEventModal{{ event.id }}" tabindex="-1" aria-labelledby="manageUserEventModalLabel{{ event.id }}" aria-hidden="true">
+								<div class="modal-dialog modal-lg modal-dialog-scrollable">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title" id="manageUserEventModalLabel{{ event.id }}">Modifier l'événement :
+												{{ event.title }}</h5>
+											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+										</div>
+										<form method="POST" action="{{ path('user_event_update', {'id': event.id}) }}">
+											<div class="modal-body">
+												<div class="mb-3">
+													<label for="title{{ event.id }}" class="form-label">Titre</label>
+													<input type="text" class="form-control" id="title{{ event.id }}" name="title" value="{{ event.title }}" required>
+												</div>
+
+												<div class="mb-3">
+													<label for="startDateTime{{ event.id }}" class="form-label">Date & heure de début</label>
+													<input type="datetime-local" class="form-control" id="startDateTime{{ event.id }}" name="startDateTime" value="{{ event.startDateTime|date('Y-m-d\\TH:i') }}" required>
+												</div>
+
+												<div class="mb-3">
+													<label for="endDateTime{{ event.id }}" class="form-label">Date & heure de fin</label>
+													<input type="datetime-local" class="form-control" id="endDateTime{{ event.id }}" name="endDateTime" value="{{ event.endDateTime|date('Y-m-d\\TH:i') }}" required>
+												</div>
+
+												<div class="mb-3">
+													<label for="maxPlayers{{ event.id }}" class="form-label">Nombre maximum de joueurs</label>
+													<input type="number" min="1" class="form-control" id="maxPlayers{{ event.id }}" name="maxPlayers" value="{{ event.maxPlayers }}" required>
+												</div>
+
+												<input type="hidden" name="_token" value="{{ csrf_token('user_update_event' ~ event.id) }}">
+											</div>
+
+											<div class="modal-footer d-flex justify-content-between">
+												<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+												<div>
+													<button type="submit" class="btn btn-success me-2">Enregistrer</button>
+													<a href="{{ path('user_event_delete', {'id': event.id}) }}" class="btn btn-danger" onclick="return confirm('Confirmer la suppression de cet événement ?')">Supprimer</a>
+												</div>
+											</div>
+										</form>
+									</div>
+								</div>
+							</div>
+						{% endif %}
+					{% endfor %}
+				</div>
+			{% endif %}
+
+			{# En attente de validation - SECTION MODIFIEE #}
+			{% if pendingEvents is empty %}
+				<p>Vous n'avez aucun événement en attente de validation.</p>
+			{% else %}
+				<h3>Événements en attente de validation</h3>
+				<div class="row">
+					{% for event in pendingEvents %}
+						<div class="col-md-4 mb-3">
+							<div class="card shadow-sm h-100 border-warning" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#eventDetailsModal{{ event.id }}">
+								<div class="card-body">
+									<h5 class="card-title">{{ event.title }}</h5>
+									<span class="badge bg-warning text-dark">En attente de validation</span>
+									<p class="mb-0 mt-2">{{ event.description|slice(0, 100) ~ '...' }}</p>
+
+									<div class="d-flex gap-2 mt-2">
+										{% if event.id in modifiableEventIds %}
+											<button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#manageUserEventModal{{ event.id }}">Gérer l'événement</button>
+										{% endif %}
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{# Modale détails #}
+						<div class="modal fade" id="eventDetailsModal{{ event.id }}" tabindex="-1" aria-labelledby="eventDetailsModalLabel{{ event.id }}" aria-hidden="true">
+							<div class="modal-dialog modal-lg modal-dialog-scrollable">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="eventDetailsModalLabel{{ event.id }}">{{ event.title }}</h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+									</div>
+									<div class="modal-body">
+										<p>
+											<strong>Description :</strong>
+										</p>
+										<p>{{ event.description }}</p>
+
+										<p>
+											<strong>Date de début :</strong>
+											{{ event.startDateTime ? event.startDateTime|date('d/m/Y H:i') : 'Non définie' }}</p>
+										<p>
+											<strong>Date de fin :</strong>
+											{{ event.endDateTime ? event.endDateTime|date('d/m/Y H:i') : 'Non définie' }}</p>
+										<p>
+											<strong>Nombre maximum de joueurs :</strong>
+											{{ event.maxPlayers }}</p>
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{# Modal gestion utilisateur (modifiable uniquement) #}
+						{% if event.id in modifiableEventIds %}
+							<div class="modal fade" id="manageUserEventModal{{ event.id }}" tabindex="-1" aria-labelledby="manageUserEventModalLabel{{ event.id }}" aria-hidden="true">
+								<div class="modal-dialog">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title" id="manageUserEventModalLabel{{ event.id }}">Modifier l'événement :
+												{{ event.title }}</h5>
+											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+										</div>
+										<form method="POST" action="{{ path('user_event_update', {'id': event.id}) }}">
+											<div class="modal-body">
+												<div class="mb-3">
+													<label for="title{{ event.id }}" class="form-label">Titre</label>
+													<input type="text" class="form-control" id="title{{ event.id }}" name="title" value="{{ event.title }}" required>
+												</div>
+
+												<div class="mb-3">
+													<label for="startDateTime{{ event.id }}" class="form-label">Date & heure de début</label>
+													<input type="datetime-local" class="form-control" id="startDateTime{{ event.id }}" name="startDateTime" value="{{ event.startDateTime|date('Y-m-d\\TH:i') }}" required>
+												</div>
+
+												<div class="mb-3">
+													<label for="endDateTime{{ event.id }}" class="form-label">Date & heure de fin</label>
+													<input type="datetime-local" class="form-control" id="endDateTime{{ event.id }}" name="endDateTime" value="{{ event.endDateTime|date('Y-m-d\\TH:i') }}" required>
+												</div>
+
+												<div class="mb-3">
+													<label for="maxPlayers{{ event.id }}" class="form-label">Nombre maximum de joueurs</label>
+													<input type="number" min="1" class="form-control" id="maxPlayers{{ event.id }}" name="maxPlayers" value="{{ event.maxPlayers }}" required>
+												</div>
+
+												<input type="hidden" name="_token" value="{{ csrf_token('user_update_event' ~ event.id) }}">
+											</div>
+
+											<div class="modal-footer d-flex justify-content-between">
+												<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+												<div>
+													<button type="submit" class="btn btn-success me-2">Enregistrer</button>
+													<a href="{{ path('user_event_delete', {'id': event.id}) }}" class="btn btn-danger" onclick="return confirm('Confirmer la suppression de cet événement ?')">Supprimer</a>
+												</div>
+											</div>
+										</form>
+									</div>
+								</div>
+							</div>
+						{% endif %}
+					{% endfor %}
+				</div>
+			{% endif %}
+		</section>
 	</div>
-
-	<div class="modal fade" id="confirmRemoveFavoriteModal" tabindex="-1" aria-labelledby="confirmRemoveFavoriteLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="confirmRemoveFavoriteLabel">Confirmer la suppression</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-				</div>
-				<div class="modal-body">
-					<p>Êtes-vous sûr de vouloir retirer cet événement de vos favoris ?</p>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-					<button type="button" class="btn btn-danger" id="confirmRemoveFavoriteBtn">Oui, retirer</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<script>
-		document.addEventListener('DOMContentLoaded', () => {
-let eventIdToRemove = null;
-const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-const confirmModal = new bootstrap.Modal(document.getElementById('confirmRemoveFavoriteModal'));
-
-document.querySelectorAll('.fa-star-toggle').forEach(star => {
-star.addEventListener('click', event => {
-event.stopPropagation();
-eventIdToRemove = star.dataset.eventId;
-confirmModal.show();
-});
-});
-
-document.getElementById('confirmRemoveFavoriteBtn').addEventListener('click', () => {
-if (! eventIdToRemove) 
-return;
-
-
-
-fetch (`/favoris/toggle/${eventIdToRemove}`, {
-method: 'POST',
-headers: {
-'X-Requested-With': 'XMLHttpRequest',
-'Content-Type': 'application/json',
-'X-CSRF-TOKEN': csrfToken
-},
-body: JSON.stringify({})
-}).then(response => {
-if (!response.ok) 
-throw new Error('Erreur réseau');
-
-
-return response.json();
-}).then(data => {
-if (data.status === 'removed') {
-const cardCol = document.querySelector (`.col-md-4[data-event-id="${eventIdToRemove}"]`);
-if (cardCol) 
-cardCol.remove();
-
-
-
-if (document.querySelectorAll('.fa-star-toggle').length === 0) {
-const container = document.querySelector('.container.mt-5');
-if (container) 
-container.innerHTML = '<p>Aucun événement en favori.</p>';
-
-
-}
-} else {
-alert('Une erreur est survenue. Veuillez réessayer.');
-}
-}).catch(() => alert('Une erreur est survenue. Veuillez réessayer.')). finally(() => {
-eventIdToRemove = null;
-confirmModal.hide();
-});
-});
-
-// Bouton Rejoindre : affiche popup simple
-document.querySelectorAll('.btn-join-event').forEach(button => {
-button.addEventListener('click', () => {
-alert('Événement rejoint');
-});
-});
-});
-	</script>
-
 {% endblock %}

@@ -69,21 +69,12 @@ class Event
     private Collection $images;
 
     #[ORM\Column(type: 'boolean')]
-
     private bool $isAdminApproved = false;
 
-    public function isAdminApproved(): ?bool
-    {
-    return $this->isAdminApproved;
-    }
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $validatedBy = null;
 
-    public function setIsAdminApproved(bool $isAdminApproved): self
-    {
-    $this->isAdminApproved = $isAdminApproved;
-    return $this;
-    }
-
-    
     public function __construct()
     {
         $this->participants = new ArrayCollection();
@@ -175,9 +166,9 @@ class Event
     }
 
     public function getParticipantsCount(): int
-{
-    return $this->participants->count();
-}
+    {
+        return $this->participants->count();
+    }
 
     public function getOrganizer(): ?User
     {
@@ -288,18 +279,34 @@ class Event
         return $this;
     }
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?User $validatedBy = null;
+    public function isAdminApproved(): ?bool
+    {
+        return $this->isAdminApproved;
+    }
+
+    public function setIsAdminApproved(bool $isAdminApproved): self
+    {
+        $this->isAdminApproved = $isAdminApproved;
+        return $this;
+    }
 
     public function getValidatedBy(): ?User
     {
-    return $this->validatedBy;
-    }   
+        return $this->validatedBy;
+    }
 
     public function setValidatedBy(?User $validatedBy): static
     {
-    $this->validatedBy = $validatedBy;
-    return $this;
+        $this->validatedBy = $validatedBy;
+        return $this;
+    }
+
+    public function getValidationStatus(): string
+    {
+        if ($this->isApproved === null) {
+            return 'En attente de validation';
+        }
+
+        return $this->isApproved ? 'Validé' : 'Non validé';
     }
 }
