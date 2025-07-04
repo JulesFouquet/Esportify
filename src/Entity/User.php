@@ -10,6 +10,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use App\Entity\Event;
+use App\Entity\Participation;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
@@ -268,4 +269,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->favoriteEvents->removeElement($event);
         return $this;
     }
+
+    #[ORM\Column(type: 'integer')]
+private int $points = 0;
+
+public function getPoints(): int
+{
+    return $this->points;
+}
+
+public function addPoints(int $points): self
+{
+    $this->points += $points;
+    return $this;
+}
+public function setPoints(int $points): self
+{
+    $this->points = $points;
+    return $this;
+}
 }

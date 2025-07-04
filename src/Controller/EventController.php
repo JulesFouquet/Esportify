@@ -12,8 +12,11 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 class EventController extends AbstractController
 {
@@ -55,8 +58,8 @@ class EventController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $event->setIsApproved(false); // Organisateur doit valider
-            $event->setIsAdminApproved(false); // Admin doit valider
+            $event->setIsApproved(false);
+            $event->setIsAdminApproved(false);
             $event->setIsStarted(false);
             $event->setOrganizer($this->getUser());
 
@@ -96,9 +99,12 @@ class EventController extends AbstractController
             return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
         }
 
+        $messages = $event->getMessages();
+
         return $this->render('event/show.html.twig', [
             'event' => $event,
             'messageForm' => $form->createView(),
+            'messages' => $messages,
         ]);
     }
 
@@ -110,6 +116,11 @@ class EventController extends AbstractController
 
         if (!$event->isApproved() || !$event->isAdminApproved()) {
             $this->addFlash('error', 'Cet événement n’est pas encore validé.');
+            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+        }
+
+        if ($event->isFinished()) {
+            $this->addFlash('error', 'L\'événement est terminé, vous ne pouvez plus vous inscrire.');
             return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
         }
 
@@ -165,9 +176,7 @@ class EventController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Remettre l'événement en attente de validation
             $event->setIsApproved(false);
-            // Optionnel, si tu veux aussi reset admin validation
             $event->setIsAdminApproved(false);
 
             $em->flush();
@@ -204,5 +213,40 @@ class EventController extends AbstractController
         $this->addFlash('success', 'Événement supprimé avec succès.');
 
         return $this->redirectToRoute('app_profile');
+    }
+
+    #[Route('/event/{id}/finish', name: 'event_finish', methods: ['POST'])]
+    #[IsGranted('ROLE_ORGANISATEUR')]
+    public function finishEvent(
+        Event $event,
+        Request $request,
+        EntityManagerInterface $em,
+        CsrfTokenManagerInterface $csrfTokenManager
+    ): JsonResponse {
+        $submittedToken = $request->request->get('_token');
+
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken('finish_event' . $event->getId(), $submittedToken))) {
+            return new JsonResponse(['success' => false, 'message' => 'Jeton CSRF invalide.'], 400);
+        }
+
+        if ($event->isFinished()) {
+            return new JsonResponse(['success' => false, 'message' => 'Événement déjà terminé.'], 400);
+        }
+
+        $event->setIsFinished(true);
+        $this->distributePoints($event, $em);
+        $em->flush();
+
+        return new JsonResponse(['success' => true, 'message' => 'Événement terminé.']);
+    }
+
+    private function distributePoints(Event $event, EntityManagerInterface $em): void
+    {
+        // Exemple basique : ajouter 10 points à chaque participant
+        foreach ($event->getParticipants() as $user) {
+            $currentPoints = $user->getPoints() ?? 0;
+            $user->setPoints($currentPoints + 10);
+            $em->persist($user);
+        }
     }
 }

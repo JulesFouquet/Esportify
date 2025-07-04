@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Event;
 use App\Entity\User;
 use App\Repository\EventRepository;
+use App\Repository\ScoreRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,7 +20,7 @@ class ProfileController extends AbstractController
 {
     #[Route('/profile', name: 'app_profile')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function profile(EventRepository $eventRepository): JsonResponse|Response
+    public function profile(EventRepository $eventRepository, ScoreRepository $scoreRepository): JsonResponse|Response
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -62,12 +63,16 @@ class ProfileController extends AbstractController
 
         $modifiableEventIds = array_map(fn($e) => $e->getId(), $modifiableEvents);
 
+        // Récupération explicite des scores de l'utilisateur
+        $scores = $scoreRepository->findBy(['player' => $user]);
+
         return $this->render('profile/index.html.twig', [
             'user' => $user,
             'favoriteEvents' => $favoriteEvents,
             'approvedEvents' => $approvedEvents,
             'pendingEvents' => $pendingEvents,
             'modifiableEventIds' => $modifiableEventIds,
+            'scores' => $scores,
         ]);
     }
 

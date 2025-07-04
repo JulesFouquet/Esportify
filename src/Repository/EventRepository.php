@@ -61,4 +61,18 @@ class EventRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+
+    public function findFinishedEventsNotRewarded(): array
+{
+    $now = new \DateTime();
+
+    return $this->createQueryBuilder('e')
+        ->where('e.endDateTime <= :now')
+        ->andWhere('e.isStarted = true')
+        ->andWhere('e.pointsAwarded = false')
+        ->setParameter('now', $now)
+        ->getQuery()
+        ->getResult();
+}
+
 }

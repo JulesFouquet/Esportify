@@ -1,4 +1,3 @@
-{# templates/organisateur/events.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Mes événements
@@ -7,23 +6,20 @@
 {% block stylesheets %}
 	{{ parent() }}
 	<style>
-		/* Désactive l'effet hover sur les événements quand une modale est ouverte */
+		/* Empêche la mise en surbrillance des items quand une modale est ouverte */
 		.modal.show ~ .container .list-group-item:hover {
 			background-color: inherit !important;
 			cursor: default;
 			filter: none !important;
 		}
-
-		/* Désactive les interactions sur les événements sous l'overlay */
+		/* Désactive les interactions sur la liste quand modale active */
 		.modal-backdrop.show ~ .container .list-group-item {
 			pointer-events: none;
 		}
-
-		/* Assure que la modale est bien au-dessus */
+		/* Gestion des z-index pour modale */
 		.modal {
 			z-index: 1050 !important;
 		}
-
 		.modal-backdrop {
 			z-index: 1040 !important;
 		}
@@ -56,9 +52,17 @@
 							<div class="text-end">
 								{% if event.isApproved %}
 									<span class="badge bg-success">Approuvé</span>
-									{% if event.isStarted %}
+
+									{% set now = "now"|date('U') %}
+									{% set endTime = event.endDateTime|date('U') %}
+
+									{% if event.isStarted and not event.isFinished and endTime > now %}
 										<div class="alert alert-info mt-2 p-1 text-center" style="font-weight: bold; font-size: 0.9em;">
 											Événement en cours
+										</div>
+									{% elseif event.isFinished %}
+										<div class="alert alert-secondary mt-2 p-1 text-center" style="font-weight: bold; font-size: 0.9em;">
+											Événement terminé
 										</div>
 									{% endif %}
 								{% else %}
@@ -70,19 +74,35 @@
 						<div class="mt-2">
 							<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary btn-sm">Voir les détails</a>
 
-							{# Affichage bouton démarrer uniquement pour les organisateurs et si l'événement est approuvé #}
 							{% if is_granted('ROLE_ORGANISATEUR') and event.isApproved %}
 								{% set now = "now"|date('U') %}
 								{% set startTime = event.startDateTime|date('U') %}
 								{% set startWindow = startTime - 1800 %}
-								{# 30 minutes avant début #}
 								{% set endTime = event.endDateTime|date('U') %}
 
 								{% if now >= startWindow and now <= endTime and not event.isStarted %}
-									<form method="POST" action="{{ path('organisateur_event_start', {'id': event.id}) }}" class="d-inline ms-2">
+									<form method="POST" action="{{ path('organisateur_event_start', {'id': event.id}) }}" class="d-inline ms-2 start-event-form">
 										<input type="hidden" name="_token" value="{{ csrf_token('start_event' ~ event.id) }}">
 										<button type="submit" class="btn btn-success btn-sm">Démarrer</button>
 									</form>
+								{% endif %}
+							{% endif %}
+
+							{# Bouton Terminer pour orga ou admin #}
+							{% if is_granted('ROLE_ORGANISATEUR') %}
+								{% set now = "now"|date('U') %}
+								{% set endTime = event.endDateTime|date('U') %}
+
+								{% if event.isStarted and now >= endTime and not event.isFinished %}
+									<form method="POST" action="{{ path('event_finish', {'id': event.id}) }}" class="d-inline ms-2 finish-event-form">
+										<input type="hidden" name="_token" value="{{ csrf_token('finish_event' ~ event.id) }}">
+										<button type="submit" class="btn btn-danger btn-sm">Terminer</button>
+									</form>
+									<span class="finish-message text-success fw-bold ms-2" style="display:none; font-size: 0.9em;">Événement terminé !</span>
+								{% elseif event.isFinished %}
+									<div class="alert alert-secondary mt-2 p-1 text-center" style="font-weight: bold; font-size: 0.9em;">
+										Événement terminé
+									</div>
 								{% endif %}
 							{% endif %}
 
@@ -102,7 +122,7 @@
 		</div>
 	</div>
 
-	{# Modales placées ici à la fin du body #}
+	{# Modales de gestion pour les admins #}
 	{% for event in events %}
 		{% if is_granted('ROLE_ADMIN') %}
 			<div class="modal fade" id="manageEventModal{{ event.id }}" tabindex="-1" aria-labelledby="manageEventModalLabel{{ event.id }}" aria-hidden="true">
@@ -122,12 +142,12 @@
 
 								<div class="mb-3">
 									<label for="startDateTime{{ event.id }}" class="form-label">Date & heure de début</label>
-									<input type="datetime-local" class="form-control" id="startDateTime{{ event.id }}" name="startDateTime" value="{{ event.startDateTime|date('Y-m-d\TH:i') }}" required>
+									<input type="datetime-local" class="form-control" id="startDateTime{{ event.id }}" name="startDateTime" value="{{ event.startDateTime|date('Y-m-d\\TH:i') }}" required>
 								</div>
 
 								<div class="mb-3">
 									<label for="endDateTime{{ event.id }}" class="form-label">Date & heure de fin</label>
-									<input type="datetime-local" class="form-control" id="endDateTime{{ event.id }}" name="endDateTime" value="{{ event.endDateTime|date('Y-m-d\TH:i') }}" required>
+									<input type="datetime-local" class="form-control" id="endDateTime{{ event.id }}" name="endDateTime" value="{{ event.endDateTime|date('Y-m-d\\TH:i') }}" required>
 								</div>
 
 								<div class="form-check mb-3">
@@ -152,9 +172,7 @@
 								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
 								<div>
 									<button type="submit" class="btn btn-primary me-2">Enregistrer</button>
-									<button type="button" class="btn btn-danger" onclick="if(confirm('Confirmer la suppression de cet événement ?')) { window.location='{{ path('admin_event_delete', {'id': event.id}) }}' }">
-										Supprimer
-									</button>
+									<button type="button" class="btn btn-danger" onclick="if(confirm('Confirmer la suppression de cet événement ?')) { window.location='{{ path('admin_event_delete', {'id': event.id}) }}' }">Supprimer</button>
 								</div>
 							</div>
 						</form>
@@ -163,4 +181,81 @@
 			</div>
 		{% endif %}
 	{% endfor %}
+{% endblock %}
+{% block javascripts %}
+	{{ parent() }}
+	<script>
+		console.log('JS chargé');
+document.addEventListener('DOMContentLoaded', () => { // === DÉMARRER ===
+document.querySelectorAll('.start-event-form').forEach(form => {
+form.addEventListener('submit', e => {
+e.preventDefault();
+
+const formData = new FormData(form);
+const action = form.getAttribute('action');
+
+fetch(action, {
+method: 'POST',
+body: formData,
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+}).then(response => response.json()).then(data => {
+if (data.success) {
+form.querySelector('button').style.display = 'none';
+const info = document.createElement('div');
+info.className = 'alert alert-info mt-2 p-1 text-center';
+info.style.fontWeight = 'bold';
+info.style.fontSize = '0.9em';
+info.textContent = 'Événement démarré';
+form.parentNode.appendChild(info);
+} else {
+alert('Erreur : ' + data.message);
+}
+}).catch(() => alert('Erreur réseau.'));
+});
+});
+
+// === TERMINER ===
+document.querySelectorAll('.finish-event-form').forEach(form => {
+form.addEventListener('submit', e => {
+e.preventDefault();
+
+const formData = new FormData(form);
+const action = form.getAttribute('action');
+
+fetch(action, {
+method: 'POST',
+body: formData,
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+}).then(async response => {
+const contentType = response.headers.get("content-type");
+const data = contentType && contentType.includes("application/json") ? await response.json() : null;
+
+if (!response.ok || ! data) {
+alert('Erreur: ' + (
+data ?. message || 'Réponse invalide'
+));
+return;
+}
+
+if (data.success) {
+form.querySelector('button').style.display = 'none';
+const message = form.nextElementSibling;
+if (message) {
+message.style.display = 'inline';
+}
+} else {
+alert('Erreur : ' + data.message);
+}
+}).catch(err => {
+console.error('Erreur AJAX:', err);
+alert('Erreur réseau.');
+});
+});
+});
+});
+	</script>
 {% endblock %}

@@ -22,49 +22,44 @@ class Event
     #[ORM\Column(type: Types::TEXT)]
     private ?string $description = null;
 
-    #[ORM\Column]
-    private ?\DateTime $startDateTime = null;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $startDateTime = null;
 
-    #[ORM\Column]
-    private ?\DateTime $endDateTime = null;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $endDateTime = null;
 
     #[ORM\Column]
     private ?int $maxPlayers = null;
 
     #[ORM\Column]
-    private ?bool $isApproved = null;
+    private bool $isApproved = false;
 
     #[ORM\Column]
-    private ?bool $isStarted = null;
+    private bool $isStarted = false;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $isFinished = false;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $points = null;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $pointsAwarded = false;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'events')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $organizer = null;
 
-    /**
-     * Participants à l'événement.
-     * 
-     * @var Collection<int, User>
-     */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'eventsJoined')]
     #[ORM\JoinTable(name: 'event_participants')]
     private Collection $participants;
 
-    /**
-     * @var Collection<int, Score>
-     */
     #[ORM\OneToMany(targetEntity: Score::class, mappedBy: 'event', orphanRemoval: true)]
     private Collection $scores;
 
-    /**
-     * @var Collection<int, Message>
-     */
     #[ORM\OneToMany(targetEntity: Message::class, mappedBy: 'event', orphanRemoval: true)]
     private Collection $messages;
 
-    /**
-     * @var Collection<int, Image>
-     */
     #[ORM\OneToMany(targetEntity: Image::class, mappedBy: 'event', orphanRemoval: true)]
     private Collection $images;
 
@@ -110,23 +105,23 @@ class Event
         return $this;
     }
 
-    public function getStartDateTime(): ?\DateTime
+    public function getStartDateTime(): ?\DateTimeInterface
     {
         return $this->startDateTime;
     }
 
-    public function setStartDateTime(\DateTime $startDateTime): static
+    public function setStartDateTime(\DateTimeInterface $startDateTime): static
     {
         $this->startDateTime = $startDateTime;
         return $this;
     }
 
-    public function getEndDateTime(): ?\DateTime
+    public function getEndDateTime(): ?\DateTimeInterface
     {
         return $this->endDateTime;
     }
 
-    public function setEndDateTime(\DateTime $endDateTime): static
+    public function setEndDateTime(\DateTimeInterface $endDateTime): static
     {
         $this->endDateTime = $endDateTime;
         return $this;
@@ -143,7 +138,7 @@ class Event
         return $this;
     }
 
-    public function isApproved(): ?bool
+    public function isApproved(): bool
     {
         return $this->isApproved;
     }
@@ -154,7 +149,7 @@ class Event
         return $this;
     }
 
-    public function isStarted(): ?bool
+    public function isStarted(): bool
     {
         return $this->isStarted;
     }
@@ -162,6 +157,44 @@ class Event
     public function setIsStarted(bool $isStarted): static
     {
         $this->isStarted = $isStarted;
+        return $this;
+    }
+
+    public function isFinished(): bool
+    {
+        return $this->isFinished;
+    }
+
+    public function setIsFinished(bool $isFinished): static
+    {
+        $this->isFinished = $isFinished;
+        return $this;
+    }
+
+    public function hasEnded(): bool
+    {
+        return $this->endDateTime <= new \DateTime();
+    }
+
+    public function getPoints(): ?int
+    {
+        return $this->points;
+    }
+
+    public function setPoints(?int $points): static
+    {
+        $this->points = $points;
+        return $this;
+    }
+
+    public function isPointsAwarded(): bool
+    {
+        return $this->pointsAwarded;
+    }
+
+    public function setPointsAwarded(bool $pointsAwarded): static
+    {
+        $this->pointsAwarded = $pointsAwarded;
         return $this;
     }
 
@@ -194,7 +227,6 @@ class Event
         if (!$this->participants->contains($user)) {
             $this->participants->add($user);
         }
-
         return $this;
     }
 
@@ -279,12 +311,12 @@ class Event
         return $this;
     }
 
-    public function isAdminApproved(): ?bool
+    public function isAdminApproved(): bool
     {
         return $this->isAdminApproved;
     }
 
-    public function setIsAdminApproved(bool $isAdminApproved): self
+    public function setIsAdminApproved(bool $isAdminApproved): static
     {
         $this->isAdminApproved = $isAdminApproved;
         return $this;
@@ -303,7 +335,7 @@ class Event
 
     public function getValidationStatus(): string
     {
-        if ($this->isApproved === null) {
+        if (!$this->isApproved) {
             return 'En attente de validation';
         }
 
