@@ -20,9 +20,7 @@
 			{{ event.maxPlayers }}</p>
 		<p>
 			<strong>Participants inscrits :</strong>
-			{{ event.participants|length }}
-			/
-			{{ event.maxPlayers }}</p>
+			{{ event.participants|length }}/{{ event.maxPlayers }}</p>
 		<p>
 			<strong>Événement approuvé :</strong>
 			{{ event.isApproved ? 'Oui' : 'Non' }}</p>
@@ -89,4 +87,32 @@
 			<p class="text-muted mt-4">Vous devez être inscrit à l’événement pour accéder au chat.</p>
 		{% endif %}
 	</div>
+
+	{# Toast Flash Messages #}
+	<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+		{% for label, messages in app.flashes %}
+			{% for message in messages %}
+				<div class="toast align-items-center text-white bg-{{ label == 'error' ? 'danger' : (label == 'success' ? 'success' : (label == 'info' ? 'info' : 'primary')) }} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+					<div class="d-flex">
+						<div class="toast-body">
+							{{ message }}
+						</div>
+						<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+					</div>
+				</div>
+			{% endfor %}
+		{% endfor %}
+	</div>
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+document.querySelectorAll('.toast').forEach(function (toastEl) {
+const toast = new bootstrap.Toast(toastEl);
+toast.show();
+});
+});
+	</script>
 {% endblock %}

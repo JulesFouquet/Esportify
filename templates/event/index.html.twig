@@ -3,6 +3,7 @@
 {% block title %}Tournois
 {% endblock %}
 
+
 {% block body %}
 	<div class="container mt-4">
 		<div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,6 +16,14 @@
 		{% if events is empty %}
 			<p>Aucun tournoi à venir ou en cours pour le moment.</p>
 		{% else %}
+			<div class="mb-3">
+				<label for="sort" class="form-label">Trier par :</label>
+				<select id="sort" class="form-select w-auto d-inline-block">
+					<option value="date">Date</option>
+					<option value="players">Nombre de joueurs</option>
+					<option value="organizer">Organisateur</option>
+				</select>
+			</div>
 			<div class="list-group">
 				{% for event in events %}
 					<div class="list-group-item">

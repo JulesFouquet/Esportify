@@ -1,0 +1,46 @@
+{# templates/event/_event_card.html.twig #}
+<div class="card shadow-sm h-100 event-card" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}">
+	<div class="card-body">
+		<h5 class="card-title">{{ event.title }}</h5>
+		<p class="card-text">
+			<strong>Participants :</strong>
+			{{ event.participantsCount }}
+			/
+			{{ event.maxPlayers }}
+		</p>
+		<p class="card-text">
+			<strong>Début :</strong>
+			{{ event.startDateTime|date('d/m/Y H:i') }}<br>
+			<strong>Fin :</strong>
+			{{ event.endDateTime|date('d/m/Y H:i') }}
+		</p>
+		<p class="mb-0">Organisateur :
+			<strong>{{ event.organizer.pseudo }}</strong>
+		</p>
+	</div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="eventModal{{ event.id }}" tabindex="-1" aria-labelledby="eventModalLabel{{ event.id }}" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="eventModalLabel{{ event.id }}">{{ event.title }}</h5>
+
+				{% if is_granted('IS_AUTHENTICATED_FULLY') %}
+					<i class="fa-star-toggle fa-star fs-4 text-warning ms-3 {{ app.user.favoriteEvents.contains(event) ? 'fa-solid' : 'fa-regular' }}" data-event-id="{{ event.id }}" title="{{ app.user.favoriteEvents.contains(event) ? 'Retirer des favoris' : 'Ajouter aux favoris' }}"></i>
+				{% endif %}
+
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+			</div>
+			<div class="modal-body">
+				<p>{{ event.description }}</p>
+				<!-- Ajoute ici d'autres infos si nécessaire -->
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+				<!-- Bouton d'inscription, etc. -->
+			</div>
+		</div>
+	</div>
+</div>

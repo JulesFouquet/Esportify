@@ -3,10 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Event;
+use App\Entity\EventBan;
 use App\Entity\Message;
 use App\Form\EventType;
 use App\Form\MessageType;
 use App\Repository\EventRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -109,36 +111,49 @@ class EventController extends AbstractController
     }
 
     #[Route('/event/{id}/register', name: 'event_register')]
-    #[IsGranted('ROLE_USER')]
-    public function register(Event $event, EntityManagerInterface $em): RedirectResponse
-    {
-        $user = $this->getUser();
+#[IsGranted('ROLE_USER')]
+public function register(Event $event, EntityManagerInterface $em): RedirectResponse
+{
+    $user = $this->getUser();
 
-        if (!$event->isApproved() || !$event->isAdminApproved()) {
-            $this->addFlash('error', 'Cet événement n’est pas encore validé.');
-            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
-        }
-
-        if ($event->isFinished()) {
-            $this->addFlash('error', 'L\'événement est terminé, vous ne pouvez plus vous inscrire.');
-            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
-        }
-
-        if ($event->getParticipants()->count() >= $event->getMaxPlayers()) {
-            $this->addFlash('error', 'Le nombre maximal de participants est atteint.');
-            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
-        }
-
-        if (!$event->getParticipants()->contains($user)) {
-            $event->addParticipant($user);
-            $em->flush();
-            $this->addFlash('success', 'Vous êtes inscrit au tournoi !');
-        } else {
-            $this->addFlash('info', 'Vous êtes déjà inscrit.');
-        }
-
+    // ❌ Vérification si l'événement est validé
+    if (!$event->isApproved() || !$event->isAdminApproved()) {
+        $this->addFlash('error', 'Cet événement n’est pas encore validé.');
         return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
     }
+
+    // ❌ Vérification si l'événement est terminé
+    if ($event->isFinished()) {
+        $this->addFlash('error', 'L\'événement est terminé, vous ne pouvez plus vous inscrire.');
+        return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+    }
+
+    // ❌ Vérification si l'utilisateur est banni
+    foreach ($event->getEventBans() as $ban) {
+        if ($ban->getUser() === $user) {
+            $this->addFlash('error', '⚠️ Vous avez été banni de cet événement.');
+            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+        }
+    }
+
+    // ❌ Vérifie si l'événement est plein
+    if ($event->getParticipants()->count() >= $event->getMaxPlayers()) {
+        $this->addFlash('error', 'Le nombre maximal de participants est atteint.');
+        return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+    }
+
+    // ✅ Inscription si non inscrit
+    if (!$event->getParticipants()->contains($user)) {
+        $event->addParticipant($user);
+        $em->flush();
+        $this->addFlash('success', '✅ Vous êtes inscrit au tournoi !');
+    } else {
+        $this->addFlash('info', 'ℹ️ Vous êtes déjà inscrit à cet événement.');
+    }
+
+    return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+}
+
 
     #[Route('/event/{id}/unregister', name: 'event_unregister')]
     #[IsGranted('ROLE_USER')]
@@ -242,11 +257,42 @@ class EventController extends AbstractController
 
     private function distributePoints(Event $event, EntityManagerInterface $em): void
     {
-        // Exemple basique : ajouter 10 points à chaque participant
         foreach ($event->getParticipants() as $user) {
             $currentPoints = $user->getPoints() ?? 0;
             $user->setPoints($currentPoints + 10);
             $em->persist($user);
         }
+    }
+
+    #[Route('/event/{eventId}/refuse/{userId}', name: 'app_event_refuse_participant', methods: ['POST'])]
+    public function refuseParticipant(
+        int $eventId,
+        int $userId,
+        EventRepository $eventRepo,
+        UserRepository $userRepo,
+        EntityManagerInterface $em,
+        Request $request
+    ): JsonResponse {
+        $event = $eventRepo->find($eventId);
+        $user = $userRepo->find($userId);
+
+        if (!$event || !$user) {
+            return new JsonResponse(['success' => false, 'message' => 'Utilisateur ou événement introuvable'], 404);
+        }
+
+        if (!$this->isCsrfTokenValid('refuse_' . $eventId . '_' . $userId, $request->request->get('_token'))) {
+            return new JsonResponse(['success' => false, 'message' => 'Token CSRF invalide'], 400);
+        }
+
+        $event->removeParticipant($user);
+
+        $ban = new EventBan();
+        $ban->setEvent($event);
+        $ban->setUser($user);
+        $em->persist($ban);
+
+        $em->flush();
+
+        return new JsonResponse(['success' => true, 'message' => 'Utilisateur exclu et ajouté à la liste noire.']);
     }
 }

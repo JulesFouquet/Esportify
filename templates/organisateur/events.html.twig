@@ -111,6 +111,12 @@
 									Gérer l'événement
 								</button>
 							{% endif %}
+							{% if event.isApproved %}
+								<button type="button" class="btn btn-info btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#participantsModal{{ event.id }}">
+									Participants
+								</button>
+							{% endif %}
+
 						</div>
 					</div>
 				{% endfor %}
@@ -176,6 +182,39 @@
 								</div>
 							</div>
 						</form>
+					</div>
+				</div>
+			</div>
+		{% endif %}
+		{% if is_granted('ROLE_ORGANISATEUR') %}
+			<div class="modal fade" id="participantsModal{{ event.id }}" tabindex="-1" aria-labelledby="participantsModalLabel{{ event.id }}" aria-hidden="true">
+				<div class="modal-dialog modal-lg modal-dialog-scrollable">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="participantsModalLabel{{ event.id }}">Participants de :
+								{{ event.title }}</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+						</div>
+						<div class="modal-body">
+							{% if event.participants is empty %}
+								<p class="text-muted">Aucun participant pour le moment.</p>
+							{% else %}
+								<ul class="list-group">
+									{% for participant in event.participants %}
+										<li class="list-group-item d-flex justify-content-between align-items-center participant-entry">
+											<span>{{ participant.pseudo }}</span>
+											<form method="POST" class="refuse-form" data-event-id="{{ event.id }}" data-user-id="{{ participant.id }}" style="margin: 0;">
+												<input type="hidden" name="_token" value="{{ csrf_token('refuse_' ~ event.id ~ '_' ~ participant.id) }}">
+												<button type="submit" class="btn btn-outline-danger btn-sm">Refuser</button>
+											</form>
+										</li>
+									{% endfor %}
+								</ul>
+							{% endif %}
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -255,6 +294,30 @@ console.error('Erreur AJAX:', err);
 alert('Erreur réseau.');
 });
 });
+});
+});
+// === REFUSER PARTICIPANT ===
+document.querySelectorAll('.refuse-form').forEach(form => {
+form.addEventListener('submit', e => {
+e.preventDefault();
+
+const eventId = form.dataset.eventId;
+const userId = form.dataset.userId;
+const formData = new FormData(form);
+
+fetch(`/event/${eventId}/refuse/${userId}`, {
+method: 'POST',
+body: formData,
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+}).then(res => res.json()).then(data => {
+if (data.success) { // Retire l’élément de la liste
+form.closest('.participant-entry').remove();
+} else {
+alert('Erreur : ' + data.message);
+}
+}).catch(() => alert('Erreur réseau.'));
 });
 });
 	</script>

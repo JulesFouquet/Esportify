@@ -1,75 +1,87 @@
-<div class="row">
-	{% if events|length > 0 %}
-		{% for event in events %}
-			<div
-				class="col-md-4 mb-4">
-				<!-- Carte cliquable -->
-				<div class="card shadow-sm h-100" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}">
-					<div class="card-body">
-						<h5 class="card-title">{{ event.title }}</h5>
-						<p class="card-text">
-							<strong>Participants :</strong>
-							{{ event.participantsCount }}
-							/
-							{{ event.maxPlayers }}
-						</p>
-						<p class="card-text">
-							<strong>Début :</strong>
-							{{ event.startDateTime|date('d/m/Y H:i') }}<br>
-							<strong>Fin :</strong>
-							{{ event.endDateTime|date('d/m/Y H:i') }}
-						</p>
-						<p>
-							Organisateur :
-							<strong>{{ event.validatedBy.pseudo }}</strong>
-						</p>
+<div>
+	{# --- Événements en cours --- #}
+	<section class="mb-5">
+		<h3>Événements en cours</h3>
+		{% set ongoingEvents = events|filter(event => event.startDateTime <= "now"|date and event.endDateTime >= "now"|date) %}
+
+		{% if ongoingEvents|length == 0 %}
+			<p>Aucun événement en cours actuellement.</p>
+		{% elseif ongoingEvents|length <= 3 %}
+			<div class="row">
+				{% for event in ongoingEvents %}
+					<div class="col-md-4 mb-4">
+						{{ include('event/_event_card.html.twig', { event: event }) }}
 					</div>
-				</div>
-
-				<!-- Modal -->
-				<div class="modal fade" id="eventModal{{ event.id }}" tabindex="-1" aria-labelledby="eventModalLabel{{ event.id }}" aria-hidden="true">
-					<div class="modal-dialog modal-lg modal-dialog-centered">
-						<div class="modal-content">
-							<div class="modal-header">
-								<h5 class="modal-title" id="eventModalLabel{{ event.id }}">{{ event.title }}</h5>
-
-								{# Étoile favoris cliquable #}
-								<i class="fa-star-toggle fa-regular fa-star fs-4 text-warning ms-3" data-event-id="{{ event.id }}" title="Ajouter aux favoris" aria-label="Ajouter aux favoris" style="cursor: pointer;"></i>
-
-								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-							</div>
-							<div class="modal-body">
-								<p class="lead">{{ event.description }}</p>
-
-								<p>
-									<strong>Début :</strong>
-									{{ event.startDateTime|date('d/m/Y H:i') }}</p>
-								<p>
-									<strong>Fin :</strong>
-									{{ event.endDateTime|date('d/m/Y H:i') }}</p>
-								<p>
-									<strong>Participants :</strong>
-									{{ event.participantsCount }}/{{ event.maxPlayers }}</p>
-								<p>
-									<strong>Organisateur :</strong>
-									{{ event.validatedBy.pseudo }}</p>
-								<p>
-									<strong>Approuvé par :</strong>
-									{{ event.validatedBy.pseudo }}</p>
-							</div>
-							<div class="modal-footer">
-								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-								<a href="{{ path('app_event_show', { id: event.id }) }}" class="btn btn-primary">Voir la page de l'événement</a>
+				{% endfor %}
+			</div>
+		{% else %}
+			<div id="ongoingCarousel" class="carousel slide" data-bs-ride="carousel">
+				<div class="carousel-inner">
+					{% for chunk in ongoingEvents|batch(3, null) %}
+						<div class="carousel-item {% if loop.first %}active{% endif %}">
+							<div class="row">
+								{% for event in chunk if event is not null %}
+									<div class="col-md-4 mb-4">
+										{{ include('event/_event_card.html.twig', { event: event }) }}
+									</div>
+								{% endfor %}
 							</div>
 						</div>
-					</div>
+					{% endfor %}
 				</div>
-
+				<button class="carousel-control-prev" type="button" data-bs-target="#ongoingCarousel" data-bs-slide="prev">
+					<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+					<span class="visually-hidden">Précédent</span>
+				</button>
+				<button class="carousel-control-next" type="button" data-bs-target="#ongoingCarousel" data-bs-slide="next">
+					<span class="carousel-control-next-icon" aria-hidden="true"></span>
+					<span class="visually-hidden">Suivant</span>
+				</button>
 			</div>
-		{% endfor %}
-	{% else %}
-		<p>Aucun événement disponible actuellement.</p>
-	{% endif %}
+		{% endif %}
+	</section>
+
+	{# --- Événements à venir --- #}
+	<section class="mb-5">
+		<h3>Événements à venir</h3>
+		{% set upcomingEvents = events|filter(event => event.startDateTime > "now"|date) %}
+
+		{% if upcomingEvents|length == 0 %}
+			<p>Aucun événement à venir actuellement.</p>
+		{% elseif upcomingEvents|length <= 3 %}
+			<div class="row">
+				{% for event in upcomingEvents %}
+					<div class="col-md-4 mb-4">
+						{{ include('event/_event_card.html.twig', { event: event }) }}
+					</div>
+				{% endfor %}
+			</div>
+		{% else %}
+			<div id="upcomingCarousel" class="carousel slide" data-bs-ride="carousel">
+				<div class="carousel-inner">
+					{% for chunk in upcomingEvents|batch(3, null) %}
+						<div class="carousel-item {% if loop.first %}active{% endif %}">
+							<div class="row">
+								{% for event in chunk if event is not null %}
+									<div class="col-md-4 mb-4">
+										{{ include('event/_event_card.html.twig', { event: event }) }}
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+					{% endfor %}
+				</div>
+				<button class="carousel-control-prev" type="button" data-bs-target="#upcomingCarousel" data-bs-slide="prev">
+					<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+					<span class="visually-hidden">Précédent</span>
+				</button>
+				<button class="carousel-control-next" type="button" data-bs-target="#upcomingCarousel" data-bs-slide="next">
+					<span class="carousel-control-next-icon" aria-hidden="true"></span>
+					<span class="visually-hidden">Suivant</span>
+				</button>
+			</div>
+		{% endif %}
+	</section>
 </div>
 
 <style>
@@ -83,11 +95,16 @@
 </style>
 
 <script>
-	// Attacher l'événement click aux étoiles après chargement partiel via AJAX
-function initStarToggles() {
-const stars = document.querySelectorAll('.fa-star-toggle');
-stars.forEach(star => {
+	function initStarToggles() { // Remplacer chaque étoile par un clone pour supprimer les anciens listeners
+document.querySelectorAll('.fa-star-toggle').forEach(star => {
+const newStar = star.cloneNode(true);
+star.parentNode.replaceChild(newStar, star);
+});
+
+// Réattacher proprement les événements
+document.querySelectorAll('.fa-star-toggle').forEach(star => {
 star.addEventListener('click', function (event) {
+event.preventDefault();
 event.stopPropagation();
 
 const eventId = this.dataset.eventId;
@@ -107,8 +124,6 @@ starElement.classList.add('fa-solid');
 starElement.classList.remove('fa-solid');
 starElement.classList.add('fa-regular');
 }
-// Optionnel: tu peux ici aussi déclencher un événement personnalisé
-// pour mettre à jour la liste "Mes favoris" si elle est visible
 }).catch(error => {
 console.error('Erreur lors du toggle favori:', error);
 });
@@ -116,6 +131,6 @@ console.error('Erreur lors du toggle favori:', error);
 });
 }
 
-// Initialiser au chargement
+// Appel initial (et à rappeler après chaque render AJAX)
 initStarToggles();
 </script>

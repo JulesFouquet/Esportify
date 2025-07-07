@@ -6,6 +6,7 @@ use App\Repository\EventRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
+use App\Entity\EventBan;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: EventRepository::class)]
@@ -70,12 +71,16 @@ class Event
     #[ORM\JoinColumn(nullable: true)]
     private ?User $validatedBy = null;
 
+    #[ORM\OneToMany(mappedBy: 'event', targetEntity: EventBan::class, orphanRemoval: true, cascade: ['persist', 'remove'])]
+private Collection $eventBans;
+
     public function __construct()
     {
         $this->participants = new ArrayCollection();
         $this->scores = new ArrayCollection();
         $this->messages = new ArrayCollection();
         $this->images = new ArrayCollection();
+        $this->eventBans = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -341,4 +346,34 @@ class Event
 
         return $this->isApproved ? 'Validé' : 'Non validé';
     }
+    /**
+ * @return Collection<int, EventBan>
+ */
+public function getEventBans(): Collection
+{
+    return $this->eventBans;
+}
+
+public function addEventBan(EventBan $eventBan): self
+{
+    if (!$this->eventBans->contains($eventBan)) {
+        $this->eventBans[] = $eventBan;
+        $eventBan->setEvent($this);
+    }
+
+    return $this;
+}
+
+public function removeEventBan(EventBan $eventBan): self
+{
+    if ($this->eventBans->removeElement($eventBan)) {
+        // set the owning side to null (unless already changed)
+        if ($eventBan->getEvent() === $this) {
+            $eventBan->setEvent(null);
+        }
+    }
+
+    return $this;
+}
+
 }
