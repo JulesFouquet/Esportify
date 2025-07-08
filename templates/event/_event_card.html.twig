@@ -1,7 +1,17 @@
 {# templates/event/_event_card.html.twig #}
-<div class="card shadow-sm h-100 event-card" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}">
-	<div class="card-body">
+<div class="card shadow-sm h-100 event-card text-white position-relative" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}" style="
+																																						         background-image: url('{{ event.image ? asset('event_images/' ~ event.image) : '' }}');
+																																						         background-size: cover;
+																																						         background-position: center;
+																																						         background-repeat: no-repeat;
+																																						     ">
+
+	<div class="card-body" style="background-color: rgba(8, 8, 8, 0.4);">
 		<h5 class="card-title">{{ event.title }}</h5>
+		<p class="card-text">
+			<strong>Jeu :</strong>
+			{{ event.game }}
+		</p>
 		<p class="card-text">
 			<strong>Participants :</strong>
 			{{ event.participantsCount }}
@@ -14,16 +24,14 @@
 			<strong>Fin :</strong>
 			{{ event.endDateTime|date('d/m/Y H:i') }}
 		</p>
-		<p class="mb-0">Organisateur :
-			<strong>{{ event.organizer.pseudo }}</strong>
-		</p>
+
 	</div>
 </div>
 
 <!-- Modal -->
 <div class="modal fade" id="eventModal{{ event.id }}" tabindex="-1" aria-labelledby="eventModalLabel{{ event.id }}" aria-hidden="true">
 	<div class="modal-dialog modal-lg modal-dialog-centered">
-		<div class="modal-content">
+		<div class="modal-content" style="background: linear-gradient(rgba(0, 0, 0, 0.77), rgba(0, 0, 0, 0.7)), url('{{ asset('event_images/background.jpg') }}') no-repeat center center; background-size: cover;">
 			<div class="modal-header">
 				<h5 class="modal-title" id="eventModalLabel{{ event.id }}">{{ event.title }}</h5>
 
@@ -34,12 +42,29 @@
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
 			</div>
 			<div class="modal-body">
+				<p>
+					<strong>Jeu :</strong>
+					{{ event.game }}</p>
 				<p>{{ event.description }}</p>
-				<!-- Ajoute ici d'autres infos si nécessaire -->
+				<p>
+					<strong>Début :</strong>
+					{{ event.startDateTime|date('d/m/Y H:i') }}</p>
+				<p>
+					<strong>Fin :</strong>
+					{{ event.endDateTime|date('d/m/Y H:i') }}</p>
+				<p>
+					<strong>Participants :</strong>
+					{{ event.participantsCount }}
+					/
+					{{ event.maxPlayers }}</p>
+				<p>
+					<strong>Organisateur :</strong>
+					{{ event.organizer.pseudo }}</p>
 			</div>
 			<div class="modal-footer">
+				<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary">Voir plus</a>
+
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-				<!-- Bouton d'inscription, etc. -->
 			</div>
 		</div>
 	</div>

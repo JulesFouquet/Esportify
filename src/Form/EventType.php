@@ -4,7 +4,7 @@ namespace App\Form;
 
 use App\Entity\Event;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -22,13 +22,19 @@ class EventType extends AbstractType
             ->add('startDateTime', DateTimeType::class, ['widget' => 'single_text'])
             ->add('endDateTime', DateTimeType::class, ['widget' => 'single_text'])
             ->add('maxPlayers', IntegerType::class)
-            ->add('isApproved', CheckboxType::class, [
-                'required' => false,
-                'label' => 'Approuvé ?'
-            ])
-            ->add('isStarted', CheckboxType::class, [
-                'required' => false,
-                'label' => 'Commencé ?'
+            ->add('game', ChoiceType::class, [
+                'label' => 'Jeu concerné',
+                'choices' => [
+                    'CS2' => 'CS2',
+                    'Dota2' => 'Dota2',
+                    'League of Legends' => 'League of Legends',
+                    'Rocket League' => 'Rocket League',
+                    'Super Smash Bros.' => 'Super Smash Bros.',
+                    'TFT' => 'TFT',
+                    'Valorant' => 'Valorant',
+                ],
+                'placeholder' => 'Sélectionnez un jeu',
+                'required' => true,
             ])
         ;
     }

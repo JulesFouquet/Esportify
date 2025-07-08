@@ -74,6 +74,12 @@ class Event
     #[ORM\OneToMany(mappedBy: 'event', targetEntity: EventBan::class, orphanRemoval: true, cascade: ['persist', 'remove'])]
 private Collection $eventBans;
 
+#[ORM\Column(length: 50)]
+private ?string $game = null;
+
+#[ORM\Column(type: 'string', length: 255, nullable: true)]
+private ?string $image = null;
+
     public function __construct()
     {
         $this->participants = new ArrayCollection();
@@ -373,6 +379,28 @@ public function removeEventBan(EventBan $eventBan): self
         }
     }
 
+    return $this;
+}
+
+public function getGame(): ?string
+{
+    return $this->game;
+}
+
+public function setGame(string $game): self
+{
+    $this->game = $game;
+    return $this;
+}
+
+public function getImage(): ?string
+{
+    return $this->image;
+}
+
+public function setImage(?string $image): self
+{
+    $this->image = $image;
     return $this;
 }
 

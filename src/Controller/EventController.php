@@ -52,31 +52,48 @@ class EventController extends AbstractController
     }
 
     #[Route('/event/new', name: 'app_event_create')]
-    #[IsGranted('ROLE_USER')]
-    public function create(Request $request, EntityManagerInterface $em): Response
-    {
-        $event = new Event();
-        $form = $this->createForm(EventType::class, $event);
-        $form->handleRequest($request);
+#[IsGranted('ROLE_USER')]
+public function create(Request $request, EntityManagerInterface $em): Response
+{
+    $event = new Event();
+    $form = $this->createForm(EventType::class, $event);
+    $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $event->setIsApproved(false);
-            $event->setIsAdminApproved(false);
-            $event->setIsStarted(false);
-            $event->setOrganizer($this->getUser());
+    if ($form->isSubmitted() && $form->isValid()) {
+        $event->setIsApproved(false);
+        $event->setIsAdminApproved(false);
+        $event->setIsStarted(false);
+        $event->setOrganizer($this->getUser());
 
-            $em->persist($event);
-            $em->flush();
+        // 🖼️ Logique pour associer une image au jeu choisi
+        $game = $event->getGame();
+        $imageMap = [
+            'CS2' => 'cs2.jpg',
+            'Dota2' => 'dota2.jpg',
+            'League of Legends' => 'lol.jpg',
+            'Rocket League' => 'rocketleague.jpg',
+            'Super Smash Bros.' => 'smashbros.jpg',
+            'TFT' => 'tft.jpg',
+            'Valorant' => 'valorant.jpg',
+        ];
 
-            $this->addFlash('success', 'Votre événement a été proposé avec succès. En attente de validation.');
-
-            return $this->redirectToRoute('app_event_list');
+        if (isset($imageMap[$game])) {
+            $event->setImage($imageMap[$game]);
         }
 
-        return $this->render('event/create.html.twig', [
-            'form' => $form->createView(),
-        ]);
+        $em->persist($event);
+        $em->flush();
+
+        $this->addFlash('success', 'Votre événement a été proposé avec succès. En attente de validation.');
+
+        return $this->redirectToRoute('app_event_list');
     }
+
+    return $this->render('event/create.html.twig', [
+        'form' => $form->createView(),
+    ]);
+}
+
 
     #[Route('/event/{id}', name: 'app_event_show')]
     public function show(Request $request, Event $event, EntityManagerInterface $em): Response

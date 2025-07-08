@@ -8,108 +8,57 @@
 
 	{% set now = date() %}
 
-	<div class="text-center mt-5 mb-5">
+	<div class="titre">
 		<h1>Bienvenue sur
 			<strong>Esportify</strong>
 			!</h1>
 		<p class="lead">La plateforme dédiée à vos tournois e-sport préférés.</p>
 	</div>
 
-	<!-- Présentation -->
-	<section class="mb-5">
-		<h2>Qui sommes-nous ?</h2>
-		<p>Esportify est une plateforme dédiée aux passionnés d'e-sport.......</p>
+	<section class="presentation">
+		<p>
+			Esportify modernise l’e-sport avec une plateforme intelligente, conçue pour simplifier les tournois et connecter les joueurs.
+		</p>
 	</section>
 
 	<!-- Événements en cours -->
-	<section class="mb-5">
+	<section class="eventHome">
 		<h2>Événements en cours</h2>
 		{% set ongoingEvents = events|filter(event => event.startDateTime <= now and event.endDateTime >= now) %}
 		{% if ongoingEvents|length == 0 %}
 			<p>Aucun événement en cours actuellement.</p>
-		{% elseif ongoingEvents|length <= 3 %}
+		{% else %}
 			<div class="row">
-				{% for event in ongoingEvents %}
+				{% for event in ongoingEvents|slice(0, 3) %}
 					<div class="col-md-4 mb-4">
 						{{ include('event/_event_card.html.twig', {event: event}) }}
 					</div>
 				{% endfor %}
-			</div>
-		{% else %}
-			<div id="ongoingCarousel" class="carousel slide" data-bs-ride="carousel">
-				<div class="carousel-inner">
-					{% for chunk in ongoingEvents|batch(3, null) %}
-						<div class="carousel-item {% if loop.first %}active{% endif %}">
-							<div class="row">
-								{% for event in chunk %}
-									{% if event is not null %}
-										<div class="col-md-4 mb-4">
-											{{ include('event/_event_card.html.twig', {event: event}) }}
-										</div>
-									{% endif %}
-								{% endfor %}
-							</div>
-						</div>
-					{% endfor %}
-				</div>
-				<button class="carousel-control-prev" type="button" data-bs-target="#ongoingCarousel" data-bs-slide="prev">
-					<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-					<span class="visually-hidden">Précédent</span>
-				</button>
-				<button class="carousel-control-next" type="button" data-bs-target="#ongoingCarousel" data-bs-slide="next">
-					<span class="carousel-control-next-icon" aria-hidden="true"></span>
-					<span class="visually-hidden">Suivant</span>
-				</button>
 			</div>
 		{% endif %}
 	</section>
 
 	<!-- Événements à venir -->
-	<section class="mb-5">
+	<section class="eventHome">
 		<h2>Événements à venir</h2>
 		{% set upcomingEvents = events|filter(event => event.startDateTime > now) %}
 		{% if upcomingEvents|length == 0 %}
 			<p>Aucun événement à venir actuellement.</p>
-		{% elseif upcomingEvents|length <= 3 %}
+		{% else %}
 			<div class="row">
-				{% for event in upcomingEvents %}
+				{% for event in upcomingEvents|slice(0, 3) %}
 					<div class="col-md-4 mb-4">
 						{{ include('event/_event_card.html.twig', {event: event}) }}
 					</div>
 				{% endfor %}
 			</div>
-		{% else %}
-			<div id="upcomingCarousel" class="carousel slide" data-bs-ride="carousel">
-				<div class="carousel-inner">
-					{% for chunk in upcomingEvents|batch(3, null) %}
-						<div class="carousel-item {% if loop.first %}active{% endif %}">
-							<div class="row">
-								{% for event in chunk %}
-									{% if event is not null %}
-										<div class="col-md-4 mb-4">
-											{{ include('event/_event_card.html.twig', {event: event}) }}
-										</div>
-									{% endif %}
-								{% endfor %}
-							</div>
-						</div>
-					{% endfor %}
-				</div>
-				<button class="carousel-control-prev" type="button" data-bs-target="#upcomingCarousel" data-bs-slide="prev">
-					<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-					<span class="visually-hidden">Précédent</span>
-				</button>
-				<button class="carousel-control-next" type="button" data-bs-target="#upcomingCarousel" data-bs-slide="next">
-					<span class="carousel-control-next-icon" aria-hidden="true"></span>
-					<span class="visually-hidden">Suivant</span>
-				</button>
-			</div>
 		{% endif %}
 	</section>
+</div>
 
-	{% block javascripts %}
-		<script>
-			function showToast(message) {
+{% block javascripts %}
+	<script>
+		function showToast(message) {
 let toast = document.getElementById('toast-notification');
 if (! toast) {
 toast = document.createElement('div');
@@ -155,6 +104,7 @@ if (!response.ok)
 throw new Error('Erreur réseau');
 
 
+
 return response.json();
 }).then(data => {
 if (data.status === 'added') {
@@ -176,16 +126,46 @@ showToast('Événement retiré des favoris.');
 document.addEventListener('DOMContentLoaded', () => {
 attachFavoriteToggleListeners();
 });
-		</script>
-	{% endblock %}
-
-	<style>
-		.card:hover {
-			box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
-			transform: translateY(-4px);
-			transition: all 0.2s ease-in-out;
-			cursor: pointer;
-			filter: brightness(0.95);
-		}
-	</style>
+	</script>
 {% endblock %}
+
+<style>
+	.card:hover {
+		box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+		transform: translateY(-4px);
+		transition: all 0.2s ease-in-out;
+		cursor: pointer;
+		filter: brightness(0.95);
+	}
+	.event-card {
+		min-height: 210px;
+		border: 2px solid #f8f9fa;
+	}
+	.titre {
+		color: #f1f1f1;
+		padding: 70px 40px 30px;
+		text-align: center;
+	}
+	.titre h1 {
+		font-size: 4.5em;
+		font-weight: bold;
+	}
+	.titre strong {
+		color: #f8f9fa;
+		text-shadow: 0 0 5px #00f2ff, 0 0 10px #f8f9fa;
+	}
+	.titre .lead {
+		font-size: 1.8em;
+		margin-top: 10px;
+		color: #ccc;
+	}
+	.presentation {
+		margin: 30px, 0, 20px;
+		padding: 20px;
+		border-radius: 8px;
+		font-size: 1.3em;
+	}
+	.eventHome h2 {
+		margin-bottom: 25px;
+	}
+</style>{% endblock %}
