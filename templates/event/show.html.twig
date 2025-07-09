@@ -21,12 +21,6 @@
 		<p>
 			<strong>Participants inscrits :</strong>
 			{{ event.participants|length }}/{{ event.maxPlayers }}</p>
-		<p>
-			<strong>Événement approuvé :</strong>
-			{{ event.isApproved ? 'Oui' : 'Non' }}</p>
-		<p>
-			<strong>Événement démarré :</strong>
-			{{ event.isStarted ? 'Oui' : 'Non' }}</p>
 		<p>Approuvé par :
 			<strong>{{ event.validatedBy.pseudo }}</strong>
 		</p>

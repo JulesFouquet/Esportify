@@ -3,41 +3,160 @@
 {% block title %}Tournois
 {% endblock %}
 
-
 {% block body %}
-	<div class="container mt-4">
+	<div class="container my-5 p-4 rounded custom-bg">
 		<div class="d-flex justify-content-between align-items-center mb-4">
-			<h2>Tournois à venir / en cours</h2>
+			<h2 class="text-white">Tournois</h2>
 			{% if is_granted('ROLE_USER') %}
-				<a href="{{ path('app_event_create') }}" class="btn btn-primary">Proposer un événement</a>
+				<a href="{{ path('app_event_create') }}" class="btn btn-primary">
+					<i class="fas fa-plus me-1"></i>
+					Proposer un événement
+				</a>
 			{% endif %}
 		</div>
 
 		{% if events is empty %}
-			<p>Aucun tournoi à venir ou en cours pour le moment.</p>
+			<p class="text-light">Aucun tournoi à venir ou en cours pour le moment.</p>
 		{% else %}
-			<div class="mb-3">
-				<label for="sort" class="form-label">Trier par :</label>
-				<select id="sort" class="form-select w-auto d-inline-block">
-					<option value="date">Date</option>
-					<option value="players">Nombre de joueurs</option>
-					<option value="organizer">Organisateur</option>
-				</select>
+			<div class="mb-3 d-flex justify-content-between align-items-center">
+				<div class="btn-group" role="group">
+					<button id="btnOngoing" class="btn btn-outline-light active">
+						<i class="fas fa-play-circle me-1"></i>
+						En cours
+					</button>
+					<button id="btnUpcoming" class="btn btn-outline-light">
+						<i class="fas fa-clock me-1"></i>
+						À venir
+					</button>
+				</div>
+				<div>
+					<label for="sort" class="form-label text-light me-2 mb-0">Trier par :</label>
+					<select id="sort" class="form-select d-inline-block w-auto">
+						<option value="date">Date</option>
+						<option value="players">Nombre de joueurs</option>
+						<option value="organizer">Organisateur</option>
+					</select>
+				</div>
 			</div>
-			<div class="list-group">
-				{% for event in events %}
-					<div class="list-group-item">
-						<h5>{{ event.title }}</h5>
-						<p>
-							Débute le
-							{{ event.startDateTime|date('d/m/Y H:i') }}<br>
-							Se termine le
-							{{ event.endDateTime|date('d/m/Y H:i') }}
-						</p>
-						<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary">Voir plus</a>
+
+			{% set now = "now"|date("U") %}
+			{% set ongoingEvents = events|filter(e => e.startDateTime.timestamp <= now and e.endDateTime.timestamp >= now) %}
+			{% set upcomingEvents = events|filter(e => e.startDateTime.timestamp > now) %}
+
+			<div id="ongoingEvents">
+				<h4 class="text-info mb-3">Événements en cours</h4>
+				{% if ongoingEvents is empty %}
+					<p class="text-light">Aucun événement en cours actuellement.</p>
+				{% else %}
+					<div class="row" id="ongoingList">
+						{% for event in ongoingEvents %}
+							<div class="col-md-6 mb-3" data-date="{{ event.startDateTime.timestamp }}" data-players="{{ event.participantsCount }}" data-organizer="{{ event.organizer.pseudo|lower }}">
+								{{ include('event/card.html.twig', { event: event }) }}
+							</div>
+						{% endfor %}
 					</div>
-				{% endfor %}
+				{% endif %}
+			</div>
+
+			<div id="upcomingEvents" class="d-none">
+				<h4 class="text-success mb-3">Événements à venir</h4>
+				{% if upcomingEvents is empty %}
+					<p class="text-light">Aucun événement à venir actuellement.</p>
+				{% else %}
+					<div class="row" id="upcomingList">
+						{% for event in upcomingEvents %}
+							<div class="col-md-6 mb-3" data-date="{{ event.startDateTime.timestamp }}" data-players="{{ event.participantsCount }}" data-organizer="{{ event.organizer.pseudo|lower }}">
+								{{ include('event/card.html.twig', { event: event }) }}
+							</div>
+						{% endfor %}
+					</div>
+				{% endif %}
 			</div>
 		{% endif %}
 	</div>
+{% endblock %}
+
+{% block stylesheets %}
+	{{ parent() }}
+	<style>
+		.event-card {
+			border: 3px solid #3399ff !important;
+		}
+
+		#ongoingEvents > h4 {
+			color: #f8f9fa !important;
+		}
+
+		#upcomingEvents > h4 {
+			color: #f8f9fa !important;
+		}
+	</style>
+{% endblock %}
+
+
+{% block javascripts %}
+	{{ parent() }}
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+const btnOngoing = document.getElementById('btnOngoing');
+const btnUpcoming = document.getElementById('btnUpcoming');
+const ongoing = document.getElementById('ongoingEvents');
+const upcoming = document.getElementById('upcomingEvents');
+const sortSelect = document.getElementById('sort');
+
+btnOngoing.addEventListener('click', function () {
+btnOngoing.classList.add('active');
+btnUpcoming.classList.remove('active');
+ongoing.classList.remove('d-none');
+upcoming.classList.add('d-none');
+});
+
+btnUpcoming.addEventListener('click', function () {
+btnUpcoming.classList.add('active');
+btnOngoing.classList.remove('active');
+upcoming.classList.remove('d-none');
+ongoing.classList.add('d-none');
+});
+
+sortSelect.addEventListener('change', function () {
+const sortBy = this.value;
+sortEventList('ongoingList', sortBy);
+sortEventList('upcomingList', sortBy);
+});
+
+function sortEventList(listId, sortBy) {
+const container = document.getElementById(listId);
+if (! container) 
+return;
+
+
+
+const items = Array.from(container.children);
+items.sort((a, b) => {
+let aVal = a.dataset[sortBy];
+let bVal = b.dataset[sortBy];
+
+if (sortBy === 'organizer') {
+return aVal.localeCompare(bVal);
+} else {
+let numA = parseInt(aVal, 10);
+let numB = parseInt(bVal, 10);
+if (isNaN(numA)) 
+numA = 0;
+
+
+
+if (isNaN(numB)) 
+numB = 0;
+
+
+
+return numA - numB;
+}
+});
+
+items.forEach(item => container.appendChild(item));
+}
+});
+	</script>
 {% endblock %}

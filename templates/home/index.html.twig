@@ -11,7 +11,7 @@
 	<div class="titre">
 		<h1>Bienvenue sur
 			<strong>Esportify</strong>
-			!</h1>
+		</h1>
 		<p class="lead">La plateforme dédiée à vos tournois e-sport préférés.</p>
 	</div>
 
@@ -31,7 +31,7 @@
 			<div class="row">
 				{% for event in ongoingEvents|slice(0, 3) %}
 					<div class="col-md-4 mb-4">
-						{{ include('event/_event_card.html.twig', {event: event}) }}
+						{{ include('event/card.html.twig', {event: event}) }}
 					</div>
 				{% endfor %}
 			</div>
@@ -48,7 +48,7 @@
 			<div class="row">
 				{% for event in upcomingEvents|slice(0, 3) %}
 					<div class="col-md-4 mb-4">
-						{{ include('event/_event_card.html.twig', {event: event}) }}
+						{{ include('event/card.html.twig', {event: event}) }}
 					</div>
 				{% endfor %}
 			</div>
@@ -139,7 +139,7 @@ attachFavoriteToggleListeners();
 	}
 	.event-card {
 		min-height: 210px;
-		border: 2px solid #f8f9fa;
+		border: 2px solid #3399ff;
 	}
 	.titre {
 		color: #f1f1f1;

@@ -1,10 +1,10 @@
 {# templates/event/_event_card.html.twig #}
-<div class="card shadow-sm h-100 event-card text-white position-relative" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}" style="
-																																						         background-image: url('{{ event.image ? asset('event_images/' ~ event.image) : '' }}');
-																																						         background-size: cover;
-																																						         background-position: center;
-																																						         background-repeat: no-repeat;
-																																						     ">
+<div class="card shadow-sm h-100 event-card text-white position-relative {{ cardClass|default('') }}" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}" style="
+		    background-image: url('{{ event.image ? asset('event_images/' ~ event.image) : '' }}');
+		    background-size: cover;
+		    background-position: center;
+		    background-repeat: no-repeat;
+		">
 
 	<div class="card-body" style="background-color: rgba(8, 8, 8, 0.4);">
 		<h5 class="card-title">{{ event.title }}</h5>

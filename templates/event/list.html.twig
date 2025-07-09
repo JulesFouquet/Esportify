@@ -6,20 +6,25 @@
 {% block body %}
 	<h1>Liste des événements</h1>
 
-	<ul>
+	<div class="row g-3">
 		{% for event in events %}
-			<li>
-				<strong>{{ event.title }}</strong>
-				- 
-								Du
-				{{ event.startDateTime|date('d/m/Y H:i') }}
-				au
-				{{ event.endDateTime|date('d/m/Y H:i') }}
-			</li>
-		{% else %}
-			<li>Aucun événement trouvé.</li>
-		{% endfor %}
-	</ul>
+			{# Calculer la classe selon la date de l'événement #}
+			{% set now = "now"|date %}
+			{% if event.startDateTime <= now and event.endDateTime >= now %}
+				{% set cardClass = 'ongoing' %}
+			{% elseif event.startDateTime > now %}
+				{% set cardClass = 'upcoming' %}
+			{% else %}
+				{% set cardClass = '' %}
+			{% endif %}
 
-	<a href="{{ path('app_home') }}">Retour à l'accueil</a>
+			<div class="col-md-6 col-lg-4">
+				{{ include('event/_event_card.html.twig', { event: event, cardClass: cardClass }) }}
+			</div>
+		{% else %}
+			<p>Aucun événement trouvé.</p>
+		{% endfor %}
+	</div>
+
+	<a href="{{ path('app_home') }}" class="btn btn-link mt-4">Retour à l'accueil</a>
 {% endblock %}
