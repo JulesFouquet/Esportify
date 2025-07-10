@@ -1,25 +1,150 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Register
+{% block title %}Inscription
 {% endblock %}
 
 {% block body %}
-	{% for flash_error in app.flashes('verify_email_error') %}
-		<div class="alert alert-danger" role="alert">{{ flash_error }}</div>
-	{% endfor %}
+	<style>
+		h1 {
+			color: #3b82f6;
+			text-align: center;
+			margin: 2.5rem 0 2rem;
+			font-weight: 600;
+			letter-spacing: 1.5px;
+			font-size: 2rem;
+		}
+
+		form {
+			max-width: 500px;
+			margin: 0 auto 4rem;
+			padding: 2.5rem;
+			background: #1e293b;
+			border-radius: 10px;
+		}
+
+		label {
+			color: #60a5fa;
+			font-weight: 500;
+			margin-bottom: 0.5rem;
+			display: block;
+			font-size: 1rem;
+		}
+
+		input[type="email"],
+		input[type="password"],
+		input[type="text"] {
+			width: 100%;
+			padding: 0.7rem 1rem;
+			border: 2px solid #3b82f6;
+			border-radius: 8px;
+			background: #0f172a;
+			color: #cbd5e1;
+			font-size: 1.05rem;
+			margin-bottom: 1.2rem;
+			transition: border-color 0.25s ease;
+		}
+
+		input[type="checkbox"] {
+			width: auto;
+			margin-right: 0.5rem;
+		}
+
+		input:focus {
+			border-color: #60a5fa;
+			outline: none;
+		}
+
+		button.btn {
+			width: 100%;
+			padding: 1rem 0;
+			background-color: #3b82f6;
+			border: none;
+			border-radius: 8px;
+			color: white;
+			font-weight: 600;
+			font-size: 1.2rem;
+			cursor: pointer;
+			transition: background-color 0.3s ease;
+		}
+
+		button.btn:hover {
+			background-color: #2563eb;
+		}
+
+		/* Conteneur pour les toasts en bas à droite */
+		.flash-container {
+			position: fixed;
+			bottom: 20px;
+			right: 20px;
+			z-index: 9999;
+		}
+
+		.alert-danger,
+		.alert-success {
+			min-width: 250px;
+			margin-top: 0.5rem;
+			padding: 0.9rem 1.2rem;
+			border-radius: 8px;
+			text-align: center;
+			font-weight: 600;
+			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+			opacity: 1;
+			transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+		}
+
+		.alert-danger {
+			background: #7f1d1d;
+			color: white;
+		}
+
+		.alert-success {
+			background: #166534;
+			color: white;
+		}
+	</style>
 
 	<h1>Inscription</h1>
 
-	{{ form_errors(registrationForm) }}
+	<div class="flash-container">
+		{% for flash_error in app.flashes('error') %}
+			<div class="alert alert-danger flash-message">{{ flash_error }}</div>
+		{% endfor %}
+		{% for flash_success in app.flashes('success') %}
+			<div class="alert alert-success flash-message">{{ flash_success }}</div>
+		{% endfor %}
+	</div>
 
 	{{ form_start(registrationForm) }}
-	{{ form_row(registrationForm.email) }}
-	{{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
-	{{ form_row(registrationForm.pseudo) }}
-	{{ form_row(registrationForm.agreeTerms) }}
+	<div class="form-group">
+		{{ form_label(registrationForm.email) }}
+		{{ form_widget(registrationForm.email) }}
+	</div>
+	<div class="form-group">
+		{{ form_label(registrationForm.plainPassword) }}
+		{{ form_widget(registrationForm.plainPassword) }}
+	</div>
+	<div class="form-group">
+		{{ form_label(registrationForm.pseudo) }}
+		{{ form_widget(registrationForm.pseudo) }}
+	</div>
+	<div class="form-group">
+		{{ form_widget(registrationForm.agreeTerms) }}
+		{{ form_label(registrationForm.agreeTerms) }}
+	</div>
 
-	<button type="submit" class="btn">Inscription</button>
+	<button type="submit" class="btn btn-primary">Inscription</button>
 	{{ form_end(registrationForm) }}
+
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+const flashMessages = document.querySelectorAll('.flash-message');
+flashMessages.forEach((msg, index) => { // petit décalage pour éviter qu'ils disparaissent tous en même temps si plusieurs
+setTimeout(() => {
+msg.style.opacity = '0';
+msg.style.transform = 'translateY(20px)';
+setTimeout(() => msg.remove(), 500);
+}, 3000 + index * 200);
+});
+});
+	</script>
 {% endblock %}

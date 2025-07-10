@@ -9,22 +9,19 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Entity\User;
 
 class ContactController extends AbstractController
 {
     #[Route('/contact', name: 'app_contact')]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function index(Request $request): Response
     {
         $user = $this->getUser();
 
-        if (!$user instanceof User) {
-    throw new \LogicException('L’utilisateur connecté n’est pas de type User.');
-}
+        // On accepte que $user soit null si non connecté
+        $pseudo = $user instanceof User ? $user->getPseudo() : null;
 
-        $form = $this->createFormBuilder()
+        $formBuilder = $this->createFormBuilder()
             ->add('subject', TextType::class, [
                 'label' => 'Objet',
             ])
@@ -34,21 +31,32 @@ class ContactController extends AbstractController
             ->add('send', SubmitType::class, [
                 'label' => 'Envoyer',
                 'attr' => ['class' => 'btn btn-primary mt-3']
-            ])
-            ->getForm();
+            ]);
+
+        // Si utilisateur connecté, on peut pré-remplir un champ par exemple (optionnel)
+        if ($pseudo) {
+            $formBuilder->add('pseudo', TextType::class, [
+                'label' => 'Pseudo',
+                'data' => $pseudo,
+                'disabled' => true,
+                'mapped' => false,
+            ]);
+        }
+
+        $form = $formBuilder->getForm();
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Ici, on pourrait enregistrer le message en base, envoyer un email, etc.
-            $this->addFlash('success', 'Votre message a été envoyé avec succès !');
+            // Traitement du formulaire
 
+            $this->addFlash('success', 'Votre message a été envoyé avec succès !');
             return $this->redirectToRoute('app_contact');
         }
 
         return $this->render('contact/index.html.twig', [
             'contactForm' => $form->createView(),
-            'pseudo' => $user->getPseudo(), // On transmet le pseudo
+            'pseudo' => $pseudo,
         ]);
     }
 }

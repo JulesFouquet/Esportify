@@ -17,11 +17,21 @@ class EventType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('title', TextType::class)
-            ->add('description', TextareaType::class)
-            ->add('startDateTime', DateTimeType::class, ['widget' => 'single_text'])
-            ->add('endDateTime', DateTimeType::class, ['widget' => 'single_text'])
-            ->add('maxPlayers', IntegerType::class)
+            ->add('title', TextType::class,  [
+                'label' => 'Titre : '
+            ])
+            ->add('description', TextareaType::class, [
+                'label' => 'Description : '
+            ])
+            ->add('startDateTime', DateTimeType::class, [
+                'label' => 'Début : ',
+                'widget' => 'single_text'])
+            ->add('endDateTime', DateTimeType::class, [
+                'label' => 'Fin : ',
+                'widget' => 'single_text'])
+            ->add('maxPlayers', IntegerType::class, [
+                'label' => 'Nombre de joueurs : '
+            ])
             ->add('game', ChoiceType::class, [
                 'label' => 'Jeu concerné',
                 'choices' => [
