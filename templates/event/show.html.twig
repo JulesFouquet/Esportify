@@ -5,80 +5,80 @@
 {% endblock %}
 
 {% block body %}
-	<div class="container mt-5">
-		<h1>{{ event.title }}</h1>
-		<p class="lead">{{ event.description }}</p>
+	<div class="event-container">
+		<h1 class="event-title">{{ event.title }}</h1>
+		<p class="event-description">{{ event.description }}</p>
 
-		<p>
-			<strong>Date de début :</strong>
-			{{ event.startDateTime|date('d/m/Y H:i') }}</p>
-		<p>
-			<strong>Date de fin :</strong>
-			{{ event.endDateTime|date('d/m/Y H:i') }}</p>
-		<p>
-			<strong>Nombre de joueurs maximum :</strong>
-			{{ event.maxPlayers }}</p>
-		<p>
-			<strong>Participants inscrits :</strong>
-			{{ event.participants|length }}/{{ event.maxPlayers }}</p>
-		<p>Approuvé par :
-			<strong>{{ event.validatedBy.pseudo }}</strong>
-		</p>
+		<div class="event-info">
+			<p>
+				<strong>Date de début :</strong>
+				{{ event.startDateTime|date('d/m/Y H:i') }}</p>
+			<p>
+				<strong>Date de fin :</strong>
+				{{ event.endDateTime|date('d/m/Y H:i') }}</p>
+			<p>
+				<strong>Nombre de joueurs maximum :</strong>
+				{{ event.maxPlayers }}</p>
+			<p>
+				<strong>Participants inscrits :</strong>
+				{{ event.participants|length }}/{{ event.maxPlayers }}</p>
+			<p>Approuvé par :
+				<strong>{{ event.validatedBy.pseudo }}</strong>
+			</p>
+		</div>
 
-		{# Boutons inscription/désinscription #}
-		{% if app.user %}
-			{% if event.isApproved %}
-				{% set isParticipant = event.participants|filter(p => p.id == app.user.id) | length > 0 %}
-				{% set maxReached = event.participants|length >= event.maxPlayers %}
+		<div class="event-actions">
+			{% if app.user %}
+				{% if event.isApproved %}
+					{% set isParticipant = event.participants|filter(p => p.id == app.user.id) | length > 0 %}
+					{% set maxReached = event.participants|length >= event.maxPlayers %}
 
-				{% if isParticipant %}
-					<a href="{{ path('event_unregister', {id: event.id}) }}" class="btn btn-danger mt-3">
-						Se désinscrire
-					</a>
-				{% elseif not maxReached %}
-					<a href="{{ path('event_register', {id: event.id}) }}" class="btn btn-primary mt-3">
-						S'inscrire
-					</a>
+					{% if isParticipant %}
+						<a href="{{ path('event_unregister', {id: event.id}) }}" class="btn btn-danger">
+							Se désinscrire
+						</a>
+					{% elseif not maxReached %}
+						<a href="{{ path('event_register', {id: event.id}) }}" class="btn btn-primary">
+							S'inscrire
+						</a>
+					{% else %}
+						<button class="btn btn-secondary" disabled>Nombre max de participants atteint</button>
+					{% endif %}
 				{% else %}
-					<button class="btn btn-secondary mt-3" disabled>Nombre max de participants atteint</button>
+					<button class="btn btn-secondary" disabled>Événement non approuvé</button>
 				{% endif %}
 			{% else %}
-				<button class="btn btn-secondary mt-3" disabled>Événement non approuvé</button>
+				<a href="{{ path('app_login') }}" class="btn btn-primary">Connexion pour s'inscrire</a>
 			{% endif %}
-		{% else %}
-			<a href="{{ path('app_login') }}" class="btn btn-primary mt-3">Connexion pour s'inscrire</a>
-		{% endif %}
+			<a href="{{ path('app_event_list') }}" class="btn btn-secondary ms-2">Retour à la liste</a>
+		</div>
 
-		<a href="{{ path('app_event_list') }}" class="btn btn-secondary mt-3">Retour à la liste</a>
-
-		{# Discussion entre participants #}
 		{% if app.user and event.participants.contains(app.user) %}
-			<hr>
-			<h3 class="mt-5">Discussion pour l'event
-				{{ event.title }}</h3>
+			<hr class="my-4">
+			<h3 class="chat-title">Discussion pour l'événement "{{ event.title }}"</h3>
 
-			<div class="mb-4">
+			<div class="message-form mb-4">
 				{{ form_start(messageForm) }}
 				{{ form_row(messageForm.content, { 'attr': {'placeholder': 'Écrivez votre message...'} }) }}
 				<button class="btn btn-success mt-2">Envoyer</button>
 				{{ form_end(messageForm) }}
 			</div>
 
-			<div class="chat-box border p-3 bg-light rounded">
+			<div class="chat-box">
 				{% for message in event.messages|sort((a, b) => a.createdAt <=> b.createdAt) %}
-					<div class="mb-2">
+					<div class="chat-message">
 						<strong>{{ message.author.pseudo }}</strong>
 						<em class="text-muted">({{ message.createdAt|date('H:i d/m/Y') }})</em>
 						:
-						<div>{{ message.content }}</div>
+						<div class="message-content">{{ message.content }}</div>
 					</div>
 				{% else %}
-					<p>Aucun message pour l'instant.</p>
+					<p class="text-muted">Aucun message pour l'instant.</p>
 				{% endfor %}
 			</div>
 		{% elseif app.user %}
-			<hr>
-			<p class="text-muted mt-4">Vous devez être inscrit à l’événement pour accéder au chat.</p>
+			<hr class="my-4">
+			<p class="text-muted">Vous devez être inscrit à l’événement pour accéder au chat.</p>
 		{% endif %}
 	</div>
 
@@ -109,4 +109,156 @@ toast.show();
 });
 });
 	</script>
+{% endblock %}
+{% block stylesheets %}
+	{{ parent() }}
+	<style>
+		body {
+			background-color: #111;
+			color: #fff;
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		}
+
+		.event-container {
+			background: #1a1a1a;
+			border-radius: 1rem;
+			padding: 2rem;
+			max-width: 800px;
+			margin: 2rem auto 4rem;
+			box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+		}
+
+		.event-title {
+			font-size: 2.5rem;
+			font-weight: 700;
+			text-align: center;
+			margin-bottom: 1rem;
+			color: #3399ff;
+		}
+
+		.event-description {
+			font-size: 1.2rem;
+			margin-bottom: 2rem;
+			color: #ddd;
+			text-align: center;
+		}
+
+		.event-info p {
+			font-size: 1rem;
+			margin: 0.25rem 0;
+			color: #ccc;
+		}
+
+		.event-info strong {
+			color: #eee;
+		}
+
+		.event-actions {
+			text-align: center;
+			margin: 2rem 0;
+		}
+
+		.btn {
+			padding: 0.6rem 1.5rem;
+			font-weight: 600;
+			border-radius: 0.5rem;
+			transition: background-color 0.3s ease;
+			font-size: 1rem;
+		}
+
+		.btn-primary {
+			background-color: #3399ff;
+			border: none;
+			color: #fff;
+		}
+
+		.btn-primary:hover {
+			background-color: #287bcc;
+			color: #fff;
+		}
+
+		.btn-danger {
+			background-color: #dc3545;
+			border: none;
+			color: #fff;
+		}
+
+		.btn-danger:hover {
+			background-color: #bb2d3b;
+			color: #fff;
+		}
+
+		.btn-secondary {
+			background-color: #555;
+			border: none;
+			color: #eee;
+			cursor: default;
+		}
+
+		.btn-secondary:disabled {
+			opacity: 0.7;
+			cursor: not-allowed;
+		}
+
+		.chat-title {
+			font-size: 1.8rem;
+			font-weight: 600;
+			margin-bottom: 1rem;
+			color: #3399ff;
+			text-align: center;
+		}
+
+		.message-form textarea,
+		.message-form input[type="text"] {
+			background-color: #222;
+			border: 1px solid #333;
+			color: #fff;
+			border-radius: 0.5rem;
+			width: 100%;
+			padding: 0.75rem;
+			font-size: 1rem;
+			resize: none;
+		}
+
+		.message-form textarea:focus,
+		.message-form input[type="text"]:focus {
+			border-color: #3399ff;
+			box-shadow: 0 0 5px rgba(51, 153, 255, 0.5);
+			outline: none;
+		}
+
+		.chat-box {
+			background-color: #222;
+			border-radius: 1rem;
+			padding: 1rem 1.5rem;
+			max-height: 350px;
+			overflow-y: auto;
+			color: #ddd;
+		}
+
+		.chat-message {
+			margin-bottom: 1rem;
+			border-bottom: 1px solid #333;
+			padding-bottom: 0.5rem;
+		}
+
+		.chat-message strong {
+			color: #3399ff;
+		}
+
+		.chat-message em {
+			font-size: 0.85rem;
+			color: #888;
+			margin-left: 0.5rem;
+		}
+
+		.message-content {
+			margin-top: 0.3rem;
+			white-space: pre-wrap;
+		}
+
+		.container .text-muted {
+			color: #bbb !important;
+		}
+	</style>
 {% endblock %}

@@ -2,46 +2,16 @@
 
 {% block title %}Mes événements
 {% endblock %}
-
-{% block stylesheets %}
-	{{ parent() }}
-	<style>
-		/* Empêche la mise en surbrillance des items quand une modale est ouverte */
-		.modal.show ~ .container .list-group-item:hover {
-			background-color: inherit !important;
-			cursor: default;
-			filter: none !important;
-		}
-		/* Désactive les interactions sur la liste quand modale active */
-		.modal-backdrop.show ~ .container .list-group-item {
-			pointer-events: none;
-		}
-		/* Gestion des z-index pour modale */
-		.modal {
-			z-index: 1050 !important;
-		}
-		.modal-backdrop {
-			z-index: 1040 !important;
-		}
-	</style>
-{% endblock %}
-
 {% block body %}
-	<div class="container mt-4">
-		<div class="d-flex justify-content-between align-items-center mb-4">
-			<h2>Mes événements organisés</h2>
-			{% if is_granted('ROLE_USER') %}
-				<a href="{{ path('app_event_create') }}" class="btn btn-success">Créer un événement</a>
-			{% endif %}
-		</div>
-
+	<div class="page-content">
+		<h2 class="text-center">Participants à l'événement</h2>
 		{% if events is empty %}
-			<div class="alert alert-info">Vous n'avez pas encore créé d'événements.</div>
+			<div class="alert">Vous n'avez pas encore créé d'événements.</div>
 		{% else %}
-			<div class="list-group">
+			<ul class="event-list">
 				{% for event in events %}
-					<div class="list-group-item mb-2">
-						<div class="d-flex justify-content-between align-items-center">
+					<li class="event-card">
+						<div class="event-header">
 							<div>
 								<h5>{{ event.title }}</h5>
 								<small>Du
@@ -49,81 +19,62 @@
 									au
 									{{ event.endDateTime|date('d/m/Y H:i') }}</small>
 							</div>
-							<div class="text-end">
-								{% if event.isApproved %}
-									<span class="badge bg-success">Approuvé</span>
-
-									{% set now = "now"|date('U') %}
-									{% set endTime = event.endDateTime|date('U') %}
-
-									{% if event.isStarted and not event.isFinished and endTime > now %}
-										<div class="alert alert-info mt-2 p-1 text-center" style="font-weight: bold; font-size: 0.9em;">
-											Événement en cours
-										</div>
-									{% elseif event.isFinished %}
-										<div class="alert alert-secondary mt-2 p-1 text-center" style="font-weight: bold; font-size: 0.9em;">
-											Événement terminé
-										</div>
-									{% endif %}
-								{% else %}
-									<span class="badge bg-warning text-dark">En attente</span>
-								{% endif %}
-							</div>
 						</div>
 
-						<div class="mt-2">
+						{% set now = "now"|date('U') %}
+						{% set endTime = event.endDateTime|date('U') %}
+						{% set startTime = event.startDateTime|date('U') %}
+						{% set startWindow = startTime - 1800 %}
+
+						{% if event.isStarted and not event.isFinished and endTime > now %}
+							<div class="alert">
+								<p>Événement en cours</p>
+							</div>
+						{% elseif event.isFinished %}
+							<div class="alert">
+								<p>Événement terminé</p>
+							</div>
+						{% endif %}
+
+						<div class="event-actions">
+
 							<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary btn-sm">Voir les détails</a>
+							{% if event.isApproved %}
+								<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#participantsModal{{ event.id }}">
+									Participants
+								</button>
+							{% endif %}
+
+							{% if is_granted('ROLE_ADMIN') %}
+								<button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#manageEventModal{{ event.id }}">
+									Gérer l'événement
+								</button>
+							{% endif %}
 
 							{% if is_granted('ROLE_ORGANISATEUR') and event.isApproved %}
-								{% set now = "now"|date('U') %}
-								{% set startTime = event.startDateTime|date('U') %}
-								{% set startWindow = startTime - 1800 %}
-								{% set endTime = event.endDateTime|date('U') %}
-
 								{% if now >= startWindow and now <= endTime and not event.isStarted %}
-									<form method="POST" action="{{ path('organisateur_event_start', {'id': event.id}) }}" class="d-inline ms-2 start-event-form">
+									<form method="POST" action="{{ path('organisateur_event_start', {'id': event.id}) }}">
 										<input type="hidden" name="_token" value="{{ csrf_token('start_event' ~ event.id) }}">
 										<button type="submit" class="btn btn-success btn-sm">Démarrer</button>
 									</form>
 								{% endif %}
 							{% endif %}
 
-							{# Bouton Terminer pour orga ou admin #}
-							{% if is_granted('ROLE_ORGANISATEUR') %}
-								{% set now = "now"|date('U') %}
-								{% set endTime = event.endDateTime|date('U') %}
-
-								{% if event.isStarted and now >= endTime and not event.isFinished %}
-									<form method="POST" action="{{ path('event_finish', {'id': event.id}) }}" class="d-inline ms-2 finish-event-form">
-										<input type="hidden" name="_token" value="{{ csrf_token('finish_event' ~ event.id) }}">
-										<button type="submit" class="btn btn-danger btn-sm">Terminer</button>
-									</form>
-									<span class="finish-message text-success fw-bold ms-2" style="display:none; font-size: 0.9em;">Événement terminé !</span>
-								{% elseif event.isFinished %}
-									<div class="alert alert-secondary mt-2 p-1 text-center" style="font-weight: bold; font-size: 0.9em;">
-										Événement terminé
-									</div>
-								{% endif %}
+							{% if is_granted('ROLE_ORGANISATEUR') and event.isStarted and now >= endTime and not event.isFinished %}
+								<form method="POST" action="{{ path('event_finish', {'id': event.id}) }}">
+									<input type="hidden" name="_token" value="{{ csrf_token('finish_event' ~ event.id) }}">
+									<button type="submit" class="btn btn-danger btn-sm">Terminer</button>
+								</form>
 							{% endif %}
 
-							{% if is_granted('ROLE_ADMIN') %}
-								<button type="button" class="btn btn-warning btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#manageEventModal{{ event.id }}">
-									Gérer l'événement
-								</button>
-							{% endif %}
-							{% if event.isApproved %}
-								<button type="button" class="btn btn-info btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#participantsModal{{ event.id }}">
-									Participants
-								</button>
-							{% endif %}
 
 						</div>
-					</div>
+					</li>
 				{% endfor %}
-			</div>
+			</ul>
 		{% endif %}
 
-		<div class="mt-4">
+		<div style="margin-top:20px;">
 			<a href="{{ path('app_home') }}" class="btn btn-secondary">Retour à l'accueil</a>
 		</div>
 	</div>
@@ -133,14 +84,14 @@
 		{% if is_granted('ROLE_ADMIN') %}
 			<div class="modal fade" id="manageEventModal{{ event.id }}" tabindex="-1" aria-labelledby="manageEventModalLabel{{ event.id }}" aria-hidden="true">
 				<div class="modal-dialog modal-lg modal-dialog-scrollable">
-					<div class="modal-content">
+					<div class="modal-content modal-content-custom">
 						<div class="modal-header">
 							<h5 class="modal-title" id="manageEventModalLabel{{ event.id }}">Gérer l'événement :
 								{{ event.title }}</h5>
 							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
 						</div>
 						<form method="POST" action="{{ path('admin_event_update', {'id': event.id}) }}">
-							<div class="modal-body">
+							<div class="modal-body modal-body-dark">
 								<div class="mb-3">
 									<label for="title{{ event.id }}" class="form-label">Titre</label>
 									<input type="text" class="form-control" id="title{{ event.id }}" name="title" value="{{ event.title }}" required>
@@ -189,7 +140,7 @@
 		{% if is_granted('ROLE_ORGANISATEUR') %}
 			<div class="modal fade" id="participantsModal{{ event.id }}" tabindex="-1" aria-labelledby="participantsModalLabel{{ event.id }}" aria-hidden="true">
 				<div class="modal-dialog modal-lg modal-dialog-scrollable">
-					<div class="modal-content">
+					<div class="modal-content modal-content-custom">
 						<div class="modal-header">
 							<h5 class="modal-title" id="participantsModalLabel{{ event.id }}">Participants de :
 								{{ event.title }}</h5>
@@ -201,12 +152,16 @@
 							{% else %}
 								<ul class="list-group">
 									{% for participant in event.participants %}
-										<li class="list-group-item d-flex justify-content-between align-items-center participant-entry">
-											<span>{{ participant.pseudo }}</span>
-											<form method="POST" class="refuse-form" data-event-id="{{ event.id }}" data-user-id="{{ participant.id }}" style="margin: 0;">
-												<input type="hidden" name="_token" value="{{ csrf_token('refuse_' ~ event.id ~ '_' ~ participant.id) }}">
-												<button type="submit" class="btn btn-outline-danger btn-sm">Refuser</button>
-											</form>
+										<li class="list-group-item participant-entry d-flex justify-content-between">
+											<div class="participant-name flex-fill">
+												{{ participant.pseudo }}
+											</div>
+											<div class="participant-action">
+												<form method="POST" class="refuse-form" data-event-id="{{ event.id }}" data-user-id="{{ participant.id }}" style="margin: 0;">
+													<input type="hidden" name="_token" value="{{ csrf_token('refuse_' ~ event.id ~ '_' ~ participant.id) }}">
+													<button type="submit" class="btn btn-outline-danger btn-sm">Refuser</button>
+												</form>
+											</div>
 										</li>
 									{% endfor %}
 								</ul>
@@ -221,103 +176,278 @@
 		{% endif %}
 	{% endfor %}
 {% endblock %}
+{% block stylesheets %}
+	{{ parent() }}
+	<style>
+		h2,
+		h5 {
+			color: #f5f5f5;
+		}
+
+		small {
+			color: #bbb;
+		}
+
+		.page-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+		}
+
+		.btn {
+			padding: 6px 12px;
+			border: none;
+			border-radius: 4px;
+			font-weight: 600;
+			cursor: pointer;
+		}
+
+		.btn-success {
+			background: #198754;
+			color: #fff;
+		}
+		.btn-success:hover {
+			background: #157347;
+		}
+
+		.btn-primary {
+			background: #0d6efd;
+			color: #fff;
+		}
+		.btn-primary:hover {
+			background: #0b5ed7;
+		}
+
+		.btn-danger {
+			background: #dc3545;
+			color: #fff;
+		}
+		.btn-danger:hover {
+			background: #bb2d3b;
+		}
+
+		.btn-warning {
+			background: #ffc107;
+			color: #212529;
+		}
+		.btn-warning:hover {
+			background: #e0a800;
+		}
+
+		.btn-info-dark {
+			background-color: #0a58ca;
+			border-color: #0a58ca;
+			color: #fff;
+		}
+
+		.btn-info-dark:hover,
+		.btn-info-dark:focus {
+			background-color: #084298;
+			border-color: #084298;
+			color: #fff;
+		}
+
+		.btn-secondary {
+			background: #6c757d;
+			color: #fff;
+		}
+		.btn-secondary:hover {
+			background: #565e64;
+		}
+		.event-list {
+			margin: 30px;
+			padding: 30px;
+			list-style: none;
+		}
+		.event-card {
+			background: #1e1e1e;
+			border: 1px solid #333;
+			padding: 15px;
+			margin-bottom: 15px;
+			border-radius: 6px;
+		}
+
+		.event-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.event-actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: 10px;
+		}
+
+		.badge {
+			display: inline-block;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-size: 0.8em;
+			font-weight: bold;
+		}
+		.alert p {
+			color: #f5f5f5;
+			font-size: 0.9em;
+		}
+
+		/* Modal */
+		.modal-content {
+			background: #1e1e1e;
+			color: #e0e0e0;
+			border: 1px solid #333;
+		}
+
+		.modal-header,
+		.modal-footer {
+			border-color: #333;
+		}
+
+		.form-control {
+			background: #2c2c2c;
+			color: #e0e0e0;
+			border: 1px solid #444;
+			padding: 6px;
+			border-radius: 4px;
+			width: 100%;
+		}
+
+		.form-control:focus {
+			border-color: #0d6efd;
+			outline: none;
+		}
+
+		.form-label {
+			display: block;
+			margin-bottom: 4px;
+			font-size: 0.9em;
+		}
+
+
+		/* CSS POUR MODAL */
+
+		/* Style harmonisé pour toutes les modales */
+		.modal-content.modal-content-custom {
+			background-color: #2b2b2b; /* Fond sombre */
+			color: #f8f9fa; /* Texte clair */
+			border-radius: 0.75rem; /* Coins arrondis */
+		}
+
+		/* Centrer et donner un peu d’air au titre */
+		.modal-title {
+			text-align: center;
+			width: 100%;
+			font-weight: 600;
+			color: #0d6efd; /* Même bleu que la bordure */
+		}
+
+		/* Uniformiser padding header et footer + border plus discrète */
+		.modal-header,
+		.modal-footer {
+			padding-top: 1rem;
+			padding-bottom: 1rem;
+			border-bottom: 1px solid #444; /* Séparateurs sombres et fins */
+			border-top: none;
+			background-color: #2b2b2b; /* Même fond que le body */
+		}
+
+		/* Corps de la modale */
+		.modal-body {
+			background-color: #2b2b2b; /* Fond sombre aussi */
+		}
+
+		/* Labels des formulaires et textes secondaires */
+		.form-label,
+		.form-check-label {
+			color: #dddddd; /* Gris clair */
+		}
+
+		/* Style cohérent des boutons */
+		.modal-footer .btn-primary,
+		.modal-footer .btn-success {
+			background-color: #0d6efd;
+			border-color: #0d6efd;
+			color: #fff;
+		}
+
+		.modal-footer .btn-primary:hover,
+		.modal-footer .btn-success:hover {
+			background-color: #0b5ed7;
+			border-color: #0a58ca;
+		}
+
+		/* Bouton refuser plus petit et harmonieux */
+		.participant-entry .btn-outline-danger {
+			padding: 0.25rem 0.5rem;
+			font-size: 0.85rem;
+			border-color: #dc3545;
+			color: #dc3545;
+		}
+
+		.participant-entry .btn-outline-danger:hover {
+			background-color: #dc3545;
+			color: #fff;
+		}
+
+		/* Icône utilisateur un peu plus discrète */
+		.participant-entry i.fas.fa-user {
+			color: #6c757d; /* gris Bootstrap */
+		}
+
+		/* Liste des participants sombre et lisible */
+		.list-group-item {
+			background-color: #3a3a3a;
+			color: #f8f9fa;
+			border-color: #555;
+		}
+
+		/* Fond sombre pour chaque ligne de la liste */
+		.list-group-item.participant-entry {
+			background-color: #3a3a3a; /* Fond gris sombre */
+			color: #f8f9fa; /* Texte clair */
+			border-color: #555; /* Bordures plus foncées */
+		}
+
+		/* Optionnel : espacement et alignement plus joli */
+		.participant-name {
+			padding-right: 1rem;
+			display: flex;
+			align-items: center;
+		}
+
+		/* Centrer le bouton verticalement si besoin */
+		.participant-action {
+			display: flex;
+			align-items: center;
+		}
+	</style>
+{% endblock %}
 {% block javascripts %}
 	{{ parent() }}
 	<script>
-		console.log('JS chargé');
-document.addEventListener('DOMContentLoaded', () => { // === DÉMARRER ===
-document.querySelectorAll('.start-event-form').forEach(form => {
-form.addEventListener('submit', e => {
-e.preventDefault();
-
-const formData = new FormData(form);
-const action = form.getAttribute('action');
-
-fetch(action, {
-method: 'POST',
-body: formData,
-headers: {
-'X-Requested-With': 'XMLHttpRequest'
-}
-}).then(response => response.json()).then(data => {
-if (data.success) {
-form.querySelector('button').style.display = 'none';
-const info = document.createElement('div');
-info.className = 'alert alert-info mt-2 p-1 text-center';
-info.style.fontWeight = 'bold';
-info.style.fontSize = '0.9em';
-info.textContent = 'Événement démarré';
-form.parentNode.appendChild(info);
-} else {
-alert('Erreur : ' + data.message);
-}
-}).catch(() => alert('Erreur réseau.'));
-});
-});
-
-// === TERMINER ===
-document.querySelectorAll('.finish-event-form').forEach(form => {
-form.addEventListener('submit', e => {
-e.preventDefault();
-
-const formData = new FormData(form);
-const action = form.getAttribute('action');
-
-fetch(action, {
-method: 'POST',
-body: formData,
-headers: {
-'X-Requested-With': 'XMLHttpRequest'
-}
-}).then(async response => {
-const contentType = response.headers.get("content-type");
-const data = contentType && contentType.includes("application/json") ? await response.json() : null;
-
-if (!response.ok || ! data) {
-alert('Erreur: ' + (
-data ?. message || 'Réponse invalide'
-));
-return;
-}
-
-if (data.success) {
-form.querySelector('button').style.display = 'none';
-const message = form.nextElementSibling;
-if (message) {
-message.style.display = 'inline';
-}
-} else {
-alert('Erreur : ' + data.message);
-}
-}).catch(err => {
-console.error('Erreur AJAX:', err);
-alert('Erreur réseau.');
-});
-});
-});
-});
-// === REFUSER PARTICIPANT ===
+		document.addEventListener('DOMContentLoaded', () => {
 document.querySelectorAll('.refuse-form').forEach(form => {
 form.addEventListener('submit', e => {
 e.preventDefault();
 
-const eventId = form.dataset.eventId;
-const userId = form.dataset.userId;
 const formData = new FormData(form);
+const action = form.getAttribute('action');
 
-fetch(`/event/${eventId}/refuse/${userId}`, {
+fetch(action, {
 method: 'POST',
-body: formData,
-headers: {
-'X-Requested-With': 'XMLHttpRequest'
-}
-}).then(res => res.json()).then(data => {
-if (data.success) { // Retire l’élément de la liste
+body: formData
+}).then(response => {
+if (response.ok) { // Retirer le participant du DOM
 form.closest('.participant-entry').remove();
 } else {
-alert('Erreur : ' + data.message);
+console.error('Erreur lors de la requête');
 }
-}).catch(() => alert('Erreur réseau.'));
+}).catch(error => {
+console.error('Erreur:', error);
+});
+});
 });
 });
 	</script>

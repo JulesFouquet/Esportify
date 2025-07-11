@@ -4,21 +4,146 @@
 {% endblock %}
 
 {% block body %}
-	<div class="container mt-5 mb-5" style="max-width: 700px;">
-		<h2 class="mb-4 text-center">Proposer un événement</h2>
+	<div class="event-create-container">
+		<h1 class="event-create-title">PROPOSER UN ÉVÉNEMENT<span>.</span>
+		</h1>
+		<p class="event-create-subtitle">Partage ton idée d'événement !</p>
 
-		<div class="card shadow-sm">
-			<div class="card-body">
-				{{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+		{% for message in app.flashes('success') %}
+			<div class="alert-success">{{ message }}</div>
+		{% endfor %}
 
-				{{ form_widget(form, {'attr': {'class': 'form-control mb-3'}}) }}
+		{{ form_start(form) }}
 
-				<div class="d-grid">
-					<button class="btn btn-success mt-3">Envoyer</button>
-				</div>
-
-				{{ form_end(form) }}
-			</div>
+		<div class="mb-3">
+			{{ form_label(form.game) }}
+			{{ form_widget(form.game) }}
 		</div>
+		<div class="mb-3">
+			{{ form_label(form.title) }}
+			{{ form_widget(form.title, {'attr': {'type': 'text'}}) }}
+		</div>
+		<div class="mb-3">
+			{{ form_label(form.description) }}
+			{{ form_widget(form.description) }}
+		</div>
+		<div class="mb-3">
+			{{ form_label(form.startDateTime) }}
+			{{ form_widget(form.startDateTime) }}
+		</div>
+		<div class="mb-3">
+			{{ form_label(form.endDateTime) }}
+			{{ form_widget(form.endDateTime) }}
+		</div>
+		<div class="mb-3">
+			{{ form_label(form.maxPlayers) }}
+			{{ form_widget(form.maxPlayers) }}
+		</div>
+
+
+		<div class="button-container">
+			<button type="submit" class="submit-btn">Envoyer</button>
+		</div>
+		{{ form_end(form) }}
 	</div>
+
+	<style>
+		body {
+			background-color: #111;
+			color: #fff;
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		}
+
+		.event-create-container {
+			background: #1a1a1a;
+			border-radius: 1rem;
+			padding: 2rem;
+			max-width: 800px;
+			margin: 2rem auto;
+		}
+
+		.event-create-title {
+			font-size: 2.5rem;
+			font-weight: 700;
+			text-align: center;
+			margin-bottom: 0.5rem;
+		}
+
+		.event-create-title span {
+			color: #3399ff;
+		}
+
+		.event-create-subtitle {
+			text-align: center;
+			color: #3399ff;
+			font-size: 1.2rem;
+			margin-bottom: 2rem;
+		}
+
+		label {
+			display: block;
+			margin-bottom: 0.5rem;
+			color: #ddd;
+			font-weight: 500;
+		}
+
+		input[type="text"],
+		input[type="datetime-local"],
+		input[type="number"],
+		textarea,
+		select {
+			background-color: #222;
+			border: 1px solid #333;
+			color: #fff;
+			border-radius: 0.5rem;
+			width: 100%;
+			padding: 0.75rem;
+			font-size: 1rem;
+		}
+
+		input[type="text"]:focus,
+		input[type="datetime-local"]:focus,
+		input[type="number"]:focus,
+		textarea:focus,
+		select:focus {
+			border-color: #3399ff;
+			box-shadow: 0 0 5px rgba(51, 153, 255, 0.5);
+			outline: none;
+		}
+
+		textarea {
+			min-height: 200px;
+			resize: none;
+		}
+
+		.button-container {
+			text-align: right;
+			margin-top: 1rem;
+		}
+
+		.submit-btn {
+			background-color: #3399ff;
+			border: none;
+			border-radius: 0.5rem;
+			font-weight: 500;
+			padding: 0.5rem 1.2rem;
+			color: #fff;
+			font-size: 1rem;
+			cursor: pointer;
+			transition: background-color 0.3s ease;
+		}
+
+		.submit-btn:hover {
+			background-color: #287bcc;
+		}
+
+		.alert-success {
+			background-color: #1e973aff;
+			color: #fff;
+			border: none;
+			border-radius: 0.5rem;
+			padding: 0.75rem 1rem;
+			margin-bottom: 1rem;
+		}
+	</style>
 {% endblock %}

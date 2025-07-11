@@ -1,47 +1,151 @@
-{# templates/organisateur/proposed_events.html.twig #}
-
 {% extends 'base.html.twig' %}
 
 {% block title %}Propositions d'événements
 {% endblock %}
 
 {% block body %}
-	<h1>Propositions d'événements en attente</h1>
+	<div class="proposed-container">
+		<h1 class="proposed-title">Événements en attente<span>.</span>
+		</h1>
 
-	{% for message in app.flashes('success') %}
-		<div class="alert alert-success">{{ message }}</div>
-	{% endfor %}
-	{% for message in app.flashes('danger') %}
-		<div class="alert alert-danger">{{ message }}</div>
-	{% endfor %}
+		{% for message in app.flashes('success') %}
+			<div class="alert-success">{{ message }}</div>
+		{% endfor %}
+		{% for message in app.flashes('danger') %}
+			<div class="alert-danger">{{ message }}</div>
+		{% endfor %}
 
-	{% if proposedEvents is empty %}
-		<p>Aucune proposition d'événement en attente.</p>
-	{% else %}
-		<table class="table table-striped">
-			<thead>
-				<tr>
-					<th>Titre</th>
-					<th>Organisateur</th>
-					<th>Début</th>
-					<th>Fin</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for event in proposedEvents %}
+		{% if proposedEvents is empty %}
+			<p class="no-events">Aucune proposition d'événement en attente.</p>
+		{% else %}
+			<table class="custom-table">
+				<thead>
 					<tr>
-						<td>{{ event.title }}</td>
-						<td>{{ event.organizer.pseudo }}</td>
-						<td>{{ event.startDateTime|date('d/m/Y H:i') }}</td>
-						<td>{{ event.endDateTime|date('d/m/Y H:i') }}</td>
-						<td>
-							<a href="{{ path('organisateur_event_approve', {'id': event.id}) }}" class="btn btn-success btn-sm">Approuver</a>
-							<a href="{{ path('organisateur_event_reject', {'id': event.id}) }}" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment rejeter cet événement ?');">Rejeter</a>
-						</td>
+						<th>Titre</th>
+						<th>Organisateur</th>
+						<th>Début</th>
+						<th>Fin</th>
+						<th>Actions</th>
 					</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	{% endif %}
+				</thead>
+				<tbody>
+					{% for event in proposedEvents %}
+						<tr>
+							<td>{{ event.title }}</td>
+							<td>{{ event.organizer.pseudo }}</td>
+							<td>{{ event.startDateTime|date('d/m/Y H:i') }}</td>
+							<td>{{ event.endDateTime|date('d/m/Y H:i') }}</td>
+							<td>
+								<a href="{{ path('organisateur_event_approve', {'id': event.id}) }}" class="btn-approve">✔ Approuver</a>
+								<a href="{{ path('organisateur_event_reject', {'id': event.id}) }}" class="btn-reject" onclick="return confirm('Voulez-vous vraiment rejeter cet événement ?');">✖ Rejeter</a>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		{% endif %}
+	</div>
+
+	<style>
+		body {
+			background-color: #111;
+			color: #fff;
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		}
+
+		.proposed-container {
+			background: #1a1a1a;
+			border-radius: 1rem;
+			padding: 2rem;
+			max-width: 1000px;
+			margin: 2rem auto;
+		}
+
+		.proposed-title {
+			font-size: 2rem;
+			font-weight: 700;
+			text-align: center;
+			margin-bottom: 1.5rem;
+		}
+
+		.proposed-title span {
+			color: #3399ff;
+		}
+
+		.alert-success,
+		.alert-danger {
+			padding: 0.75rem 1rem;
+			margin-bottom: 1rem;
+			border-radius: 0.5rem;
+		}
+
+		.alert-success {
+			background-color: #28a745;
+			color: #fff;
+		}
+
+		.alert-danger {
+			background-color: #dc3545;
+			color: #fff;
+		}
+
+		.no-events {
+			text-align: center;
+			color: #bbb;
+		}
+
+		.custom-table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-top: 1rem;
+		}
+
+		.custom-table th,
+		.custom-table td {
+			padding: 0.75rem;
+			text-align: left;
+		}
+
+		.custom-table thead {
+			background-color: #333;
+		}
+
+		.custom-table tbody tr:nth-child(even) {
+			background-color: #222;
+		}
+
+		.custom-table tbody tr:nth-child(odd) {
+			background-color: #2a2a2a;
+		}
+
+		.btn-approve,
+		.btn-reject {
+			display: inline-block;
+			padding: 0.4rem 0.8rem;
+			border-radius: 0.4rem;
+			font-size: 0.9rem;
+			font-weight: 500;
+			text-decoration: none;
+			transition: background-color 0.3s ease;
+			margin-right: 0.3rem;
+		}
+
+		.btn-approve {
+			background-color: #28a745;
+			color: #fff;
+		}
+
+		.btn-approve:hover {
+			background-color: #218838;
+		}
+
+		.btn-reject {
+			background-color: #dc3545;
+			color: #fff;
+		}
+
+		.btn-reject:hover {
+			background-color: #c82333;
+		}
+	</style>
 {% endblock %}
