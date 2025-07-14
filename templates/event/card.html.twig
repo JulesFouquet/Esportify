@@ -1,11 +1,11 @@
-{# templates/event/_event_card.html.twig #}
-<div class="card shadow-sm h-100 event-card text-white position-relative {{ cardClass|default('') }}" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}" style="
-		    background-image: url('{{ event.image ? asset('event_images/' ~ event.image) : '' }}');
-		    background-size: cover;
-		    background-position: center;
-		    background-repeat: no-repeat;
-		">
+{# templates/event/card.html.twig #}
 
+<div class="card shadow-sm h-100 event-card text-white position-relative {{ cardClass|default('') }}" data-bs-toggle="modal" data-bs-target="#{{ modalPrefix }}{{ event.id }}" style="
+		         background-image: url('{{ event.image ? asset('event_images/' ~ event.image) : '' }}');
+		         background-size: cover;
+		         background-position: center;
+		         background-repeat: no-repeat;
+		     ">
 	<div class="card-body" style="background-color: rgba(8, 8, 8, 0.4);">
 		<h5 class="card-title">{{ event.title }}</h5>
 		<p class="card-text">
@@ -24,19 +24,18 @@
 			<strong>Fin :</strong>
 			{{ event.endDateTime|date('d/m/Y H:i') }}
 		</p>
-
 	</div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="eventModal{{ event.id }}" tabindex="-1" aria-labelledby="eventModalLabel{{ event.id }}" aria-hidden="true">
+<!-- Modal principale -->
+<div class="modal fade" id="{{ modalPrefix }}{{ event.id }}" tabindex="-1" aria-labelledby="{{ modalPrefix }}Label{{ event.id }}" aria-hidden="true">
 	<div class="modal-dialog modal-lg modal-dialog-centered">
 		<div class="modal-content" style="background: linear-gradient(rgba(0, 0, 0, 0.77), rgba(0, 0, 0, 0.7)), url('{{ asset('event_images/background.jpg') }}') no-repeat center center; background-size: cover;">
 			<div class="modal-header">
-				<h5 class="modal-title" id="eventModalLabel{{ event.id }}">{{ event.title }}</h5>
+				<h5 class="modal-title" id="{{ modalPrefix }}Label{{ event.id }}">{{ event.title }}</h5>
 
 				{% if is_granted('IS_AUTHENTICATED_FULLY') %}
-					<i class="fa-star-toggle fa-star fs-4 text-warning ms-3 {{ app.user.favoriteEvents.contains(event) ? 'fa-solid' : 'fa-regular' }}" data-event-id="{{ event.id }}" title="{{ app.user.favoriteEvents.contains(event) ? 'Retirer des favoris' : 'Ajouter aux favoris' }}"></i>
+					<i class="fa-star-toggle fa-star fs-4 text-warning ms-3 {{ app.user.favoriteEvents.contains(event) ? 'fa-solid' : 'fa-regular' }}" data-event-id="{{ event.id }}" title="{{ app.user.favoriteEvents.contains(event) ? 'Retirer des favoris' : 'Ajouter aux favoris' }}" style="pointer-events: auto;"></i>
 				{% endif %}
 
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
@@ -62,10 +61,61 @@
 					{{ event.organizer.pseudo }}</p>
 			</div>
 			<div class="modal-footer">
-				<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary">Voir plus</a>
+				{% if showDetailsButton is not defined or showDetailsButton %}
+					<a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn btn-primary">Voir plus</a>
+				{% endif %}
+
+				{% if event.id in modifiableEventIds %}
+					<button type="button" class="btn btn-warning" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#{{ modalPrefix }}-manage{{ event.id }}">
+						Gérer l'événement
+					</button>
+				{% endif %}
 
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
 			</div>
 		</div>
 	</div>
 </div>
+
+{% if event.id in modifiableEventIds %}
+	<!-- Modal de gestion -->
+	<div class="modal fade" id="{{ modalPrefix }}-manage{{ event.id }}" tabindex="-1" aria-labelledby="{{ modalPrefix }}-manageLabel{{ event.id }}" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content" style="background: #2c2c2c; color: white;">
+				<div class="modal-header">
+					<h5 class="modal-title" id="{{ modalPrefix }}-manageLabel{{ event.id }}">Modifier l'événement :
+						{{ event.title }}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+				</div>
+				<form method="POST" action="{{ path('user_event_update', {'id': event.id}) }}">
+					<div class="modal-body">
+						<div class="mb-3">
+							<label for="title{{ event.id }}" class="form-label">Titre</label>
+							<input type="text" class="form-control" id="title{{ event.id }}" name="title" value="{{ event.title }}" required>
+						</div>
+						<div class="mb-3">
+							<label for="startDateTime{{ event.id }}" class="form-label">Date & heure de début</label>
+							<input type="datetime-local" class="form-control" id="startDateTime{{ event.id }}" name="startDateTime" value="{{ event.startDateTime|date('Y-m-d\\TH:i') }}" required>
+						</div>
+						<div class="mb-3">
+							<label for="endDateTime{{ event.id }}" class="form-label">Date & heure de fin</label>
+							<input type="datetime-local" class="form-control" id="endDateTime{{ event.id }}" name="endDateTime" value="{{ event.endDateTime|date('Y-m-d\\TH:i') }}" required>
+						</div>
+						<div class="mb-3">
+							<label for="maxPlayers{{ event.id }}" class="form-label">Nombre maximum de joueurs</label>
+							<input type="number" min="1" class="form-control" id="maxPlayers{{ event.id }}" name="maxPlayers" value="{{ event.maxPlayers }}" required>
+						</div>
+						<input type="hidden" name="_token" value="{{ csrf_token('user_update_event' ~ event.id) }}">
+					</div>
+					<div class="modal-footer d-flex justify-content-between">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+						<div>
+							<button type="submit" class="btn btn-success me-2">Enregistrer</button>
+							<a href="{{ path('user_event_delete', {'id': event.id}) }}" class="btn btn-danger" onclick="return confirm('Confirmer la suppression de cet événement ?')">Supprimer</a>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{% endif %}

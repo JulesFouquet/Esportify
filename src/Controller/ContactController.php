@@ -17,11 +17,9 @@ class ContactController extends AbstractController
     public function index(Request $request): Response
     {
         $user = $this->getUser();
-
-        // On accepte que $user soit null si non connecté
         $pseudo = $user instanceof User ? $user->getPseudo() : null;
 
-        $formBuilder = $this->createFormBuilder()
+        $form = $this->createFormBuilder()
             ->add('subject', TextType::class, [
                 'label' => 'Objet',
             ])
@@ -31,25 +29,13 @@ class ContactController extends AbstractController
             ->add('send', SubmitType::class, [
                 'label' => 'Envoyer',
                 'attr' => ['class' => 'btn btn-primary mt-3']
-            ]);
-
-        // Si utilisateur connecté, on peut pré-remplir un champ par exemple (optionnel)
-        if ($pseudo) {
-            $formBuilder->add('pseudo', TextType::class, [
-                'label' => 'Pseudo',
-                'data' => $pseudo,
-                'disabled' => true,
-                'mapped' => false,
-            ]);
-        }
-
-        $form = $formBuilder->getForm();
+            ])
+            ->getForm();
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Traitement du formulaire
-
+            // Ici tu peux ajouter le traitement du message (ex: envoyer email, sauvegarder en base...)
             $this->addFlash('success', 'Votre message a été envoyé avec succès !');
             return $this->redirectToRoute('app_contact');
         }

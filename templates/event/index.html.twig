@@ -51,7 +51,7 @@
 					<div class="row" id="ongoingList">
 						{% for event in ongoingEvents %}
 							<div class="col-md-6 mb-3" data-date="{{ event.startDateTime.timestamp }}" data-players="{{ event.participantsCount }}" data-organizer="{{ event.organizer.pseudo|lower }}">
-								{{ include('event/card.html.twig', { event: event }) }}
+								{{ include('event/card.html.twig', { event: event , modalPrefix: 'tournement', modifiableEventIds: []}) }}
 							</div>
 						{% endfor %}
 					</div>
@@ -66,7 +66,7 @@
 					<div class="row" id="upcomingList">
 						{% for event in upcomingEvents %}
 							<div class="col-md-6 mb-3" data-date="{{ event.startDateTime.timestamp }}" data-players="{{ event.participantsCount }}" data-organizer="{{ event.organizer.pseudo|lower }}">
-								{{ include('event/card.html.twig', { event: event }) }}
+								{{ include('event/card.html.twig', { event: event , modalPrefix: 'tournement', modifiableEventIds: []}) }}
 							</div>
 						{% endfor %}
 					</div>
@@ -79,6 +79,13 @@
 {% block stylesheets %}
 	{{ parent() }}
 	<style>
+		.card:hover {
+			box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+			transform: translateY(-4px);
+			transition: all 0.2s ease-in-out;
+			cursor: pointer;
+			filter: brightness(0.95);
+		}
 		.event-card {
 			border: 3px solid #3399ff !important;
 		}
@@ -157,6 +164,60 @@ return numA - numB;
 
 items.forEach(item => container.appendChild(item));
 }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+
+// --- Ton code de gestion des onglets + tri (celui que tu as déjà) ---
+
+// Ajout de la gestion des clics sur les étoiles dans les modales
+function initFavoriteStars() {
+const stars = document.querySelectorAll('.fa-star-toggle');
+
+stars.forEach(star => {
+star.addEventListener('click', function (e) {
+e.stopPropagation(); // pour éviter que la modale ne se ferme ou autre
+
+if (!window.csrfToken) {
+console.error('CSRF token manquant');
+return;
+}
+
+const eventId = this.dataset.eventId;
+
+fetch('/favoris/toggle/' + eventId, {
+method: 'POST',
+headers: {
+'X-CSRF-TOKEN': window.csrfToken,
+'X-Requested-With': 'XMLHttpRequest'
+}
+}).then(response => {
+if (!response.ok) 
+throw new Error('Erreur réseau');
+
+
+
+return response.json();
+}).then(data => {
+if (data.status === 'added') {
+this.classList.remove('fa-regular');
+this.classList.add('fa-solid');
+this.title = 'Retirer des favoris';
+} else if (data.status === 'removed') {
+this.classList.remove('fa-solid');
+this.classList.add('fa-regular');
+this.title = 'Ajouter aux favoris';
+}
+console.log('Favori togglé:', data);
+}).catch(error => {
+console.error('Erreur toggle favori:', error);
+});
+});
+});
+}
+
+initFavoriteStars();
+
 });
 	</script>
 {% endblock %}
