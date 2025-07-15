@@ -23,7 +23,7 @@ class DistributeEventPointsCommand extends Command
     {
         $count = $this->distributor->distributePoints();
 
-        $output->writeln("✅ Points attribués pour $count événement(s) terminé(s).");
+        $output->writeln("Points attribués pour $count événement(s) terminé(s).");
 
         return Command::SUCCESS;
     }

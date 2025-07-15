@@ -148,7 +148,7 @@
 						</div>
 						<div class="modal-body">
 							{% if event.participants is empty %}
-								<p class="text-muted">Aucun participant pour le moment.</p>
+								<p class="text">Aucun participant pour le moment.</p>
 							{% else %}
 								<ul class="list-group">
 									{% for participant in event.participants %}
@@ -157,11 +157,12 @@
 												{{ participant.pseudo }}
 											</div>
 											<div class="participant-action">
-												<form method="POST" class="refuse-form" data-event-id="{{ event.id }}" data-user-id="{{ participant.id }}" style="margin: 0;">
+												<form method="POST" action="{{ path('organizer_event_refuse', {'id': event.id, 'userId': participant.id}) }}" style="margin: 0;">
 													<input type="hidden" name="_token" value="{{ csrf_token('refuse_' ~ event.id ~ '_' ~ participant.id) }}">
 													<button type="submit" class="btn btn-outline-danger btn-sm">Refuser</button>
 												</form>
 											</div>
+
 										</li>
 									{% endfor %}
 								</ul>

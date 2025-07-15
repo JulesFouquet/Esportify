@@ -41,21 +41,13 @@ class ProfileController extends AbstractController
             if ($event->isApproved()) {
                 $approvedEvents[] = $event;
 
-                // Si l'événement est validé, pas encore démarré et créé par l'user => modifiable
-                if (
-                    $event->getStartDateTime() > $now &&
-                    $event->getOrganizer() === $user
-                ) {
+                if ($event->getStartDateTime() > $now && $event->getOrganizer() === $user) {
                     $modifiableEvents[] = $event;
                 }
             } else {
                 $pendingEvents[] = $event;
 
-                // Même logique : l'utilisateur peut modifier les événements qu'il a créés, même s'ils ne sont pas encore validés
-                if (
-                    $event->getStartDateTime() > $now &&
-                    $event->getOrganizer() === $user
-                ) {
+                if ($event->getStartDateTime() > $now && $event->getOrganizer() === $user) {
                     $modifiableEvents[] = $event;
                 }
             }
@@ -63,17 +55,26 @@ class ProfileController extends AbstractController
 
         $modifiableEventIds = array_map(fn($e) => $e->getId(), $modifiableEvents);
 
-        // Récupération explicite des scores de l'utilisateur
+        // Scores de l'utilisateur
         $scores = $scoreRepository->findBy(['player' => $user]);
 
+        // ✅ Nouvel ajout : événements où l'utilisateur est inscrit
+        $registeredEvents = $eventRepository->createQueryBuilder('e')
+            ->innerJoin('e.participants', 'p')
+            ->where('p.id = :userId')
+            ->setParameter('userId', $user->getId())
+            ->getQuery()
+            ->getResult();
+
         return $this->render('profile/index.html.twig', [
-            'user' => $user,
-            'favoriteEvents' => $favoriteEvents,
-            'approvedEvents' => $approvedEvents,
-            'pendingEvents' => $pendingEvents,
-            'modifiableEventIds' => $modifiableEventIds,
-            'scores' => $scores,
-        ]);
+    'user' => $user,
+    'favoriteEvents' => $favoriteEvents,
+    'createdEvents' => $approvedEvents,   // ✅ renommer ici
+    'pendingEvents' => $pendingEvents,
+    'modifiableEventIds' => $modifiableEventIds,
+    'scores' => $scores,
+    'registeredEvents' => $registeredEvents,
+]);
     }
 
     #[Route('/favoris/toggle/{id}', name: 'app_profile_favorite_toggle', methods: ['POST'])]
@@ -116,12 +117,10 @@ class ProfileController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        // Vérifier que c'est bien le créateur qui modifie l'événement
         if ($event->getOrganizer() !== $user) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas modifier cet événement.');
         }
 
-        // Vérifier que l'événement n'a pas encore commencé
         if ($event->getStartDateTime() <= new \DateTime()) {
             $this->addFlash('error', 'Cet événement a déjà commencé, vous ne pouvez plus le modifier.');
             return $this->redirectToRoute('app_profile');
@@ -132,19 +131,16 @@ class ProfileController extends AbstractController
             throw $this->createAccessDeniedException('Token CSRF invalide.');
         }
 
-        // Récupérer les données du formulaire
         $title = $request->request->get('title');
         $startDateTime = $request->request->get('startDateTime');
         $endDateTime = $request->request->get('endDateTime');
         $maxPlayers = $request->request->get('maxPlayers');
 
-        // Mise à jour de l'entité
         $event->setTitle($title);
         $event->setStartDateTime(new \DateTime($startDateTime));
         $event->setEndDateTime(new \DateTime($endDateTime));
         $event->setMaxPlayers((int)$maxPlayers);
 
-        // Repasse en attente de validation
         $event->setIsApproved(false);
 
         $em->persist($event);

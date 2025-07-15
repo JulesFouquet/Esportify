@@ -6,8 +6,22 @@
 
 {% block body %}
 	<div class="container mt-4">
-		<h1 class="mb-3">{{ user.pseudo }}</h1>
-		<p class="mt-3 text-white">Points de participation :
+
+		<div class="d-flex align-items-center mb-3">
+			<h1 class="mb-0">{{ user.pseudo }}</h1>
+			<div class="ms-auto text-white">
+				{% if is_granted('ROLE_ADMIN') %}
+					Rôle : Admin !
+				{% elseif is_granted('ROLE_ORGANISATEUR') %}
+					Rôle : Organisateur !
+				{% else %}
+					Rôle : Utilisateur
+				{% endif %}
+			</div>
+		</div>
+
+		<p class="mt-3 text-white">
+			Points de participation :
 			<strong>{{ app.user.points }}</strong>
 		</p>
 
@@ -24,6 +38,11 @@
 				</button>
 			</li>
 			<li class="nav-item" role="presentation">
+				<button class="nav-link" id="registered-events-tab" data-bs-toggle="tab" data-bs-target="#registered-events" type="button" role="tab" aria-controls="registered-events" aria-selected="false">
+					Événements inscrits
+				</button>
+			</li>
+			<li class="nav-item" role="presentation">
 				<button class="nav-link" id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" type="button" role="tab" aria-controls="favorites" aria-selected="false">
 					Mes favoris
 				</button>
@@ -33,65 +52,66 @@
 		<div
 			class="tab-content mt-3" id="profileTabsContent">
 
-			{# Événements en attente #}
+			{# Événements en attente de validation #}
 			<div class="tab-pane fade show active" id="pending-events" role="tabpanel" aria-labelledby="pending-events-tab">
 				{% if pendingEvents is not empty %}
-					<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+					<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-2">
 						{% for event in pendingEvents %}
 							<div class="col">
-								{{ include('event/card.html.twig', { event: event, modifiableEventIds: modifiableEventIds, modalPrefix: 'profile', showDetailsButton: false }) }}
+								{{ include('event/card.html.twig', { event: event, modifiableEventIds: modifiableEventIds, modalPrefix: 'pending' }) }}
 							</div>
 						{% endfor %}
 					</div>
 				{% else %}
-					<p class="mt-3 text-white">Vous n'avez aucun événement en attente de validation. Tenter l'expérience :
-						<a href="{{ path('app_event_create') }}" class="btn btn-primary">
-							<i class="fas fa-plus me-1"></i>
-							Proposer un événement
-						</a>
-					</p>
+					<p class="mt-3 text-white">Vous n'avez aucun événement en attente de validation.</p>
 				{% endif %}
 			</div>
 
-			{# Événements créés validés #}
+			{# Événements créés et validés #}
 			<div class="tab-pane fade" id="created-events" role="tabpanel" aria-labelledby="created-events-tab">
-				{% set now = "now"|date("U") %}
-				{% set ongoingEvents = approvedEvents|filter(event => event.startDateTime.timestamp <= now and event.endDateTime.timestamp >= now) %}
-				{% set upcomingEvents = approvedEvents|filter(event => event.startDateTime.timestamp > now) %}
-				{% set pastEvents = approvedEvents|filter(event => event.endDateTime.timestamp < now) %}
-
-				{% for category, events in {'Événements en cours': ongoingEvents, 'Événements à venir': upcomingEvents, 'Événements passés': pastEvents} %}
-					<h5 class="mt-4">{{ category }}</h5>
-					{% if events|length > 0 %}
-						<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-2">
-							{% for event in events %}
-								<div class="col">
-									{{ include('event/card.html.twig', { event: event, modifiableEventIds: modifiableEventIds, modalPrefix: 'profile' }) }}
-								</div>
-							{% endfor %}
-						</div>
-					{% endif %}
-					{% if not loop.last %}
-						<hr class="my-4">
-					{% endif %}
-				{% endfor %}
+				{% if createdEvents is not empty %}
+					<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-2">
+						{% for event in createdEvents %}
+							<div class="col">
+								{{ include('event/card.html.twig', { event: event, modifiableEventIds: modifiableEventIds, modalPrefix: 'created' }) }}
+							</div>
+						{% endfor %}
+					</div>
+				{% else %}
+					<p class="mt-3 text-white">Vous n'avez créé aucun événement validé.</p>
+				{% endif %}
 			</div>
 
-			{# Favoris #}
+			{# Événements où je suis inscrit #}
+			<div class="tab-pane fade" id="registered-events" role="tabpanel" aria-labelledby="registered-events-tab">
+				{% if registeredEvents is not empty %}
+					<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-2">
+						{% for event in registeredEvents %}
+							<div class="col">
+								{{ include('event/card.html.twig', { event: event, modifiableEventIds: modifiableEventIds, modalPrefix: 'registered' }) }}
+							</div>
+						{% endfor %}
+					</div>
+				{% else %}
+					<p class="mt-3 text-white">Vous n'êtes inscrit à aucun événement pour le moment.</p>
+				{% endif %}
+			</div>
+
+			{# Événements favoris #}
 			<div class="tab-pane fade" id="favorites" role="tabpanel" aria-labelledby="favorites-tab">
 				{% if favoriteEvents is not empty %}
 					<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-2">
 						{% for event in favoriteEvents %}
 							<div class="col">
 								{{ include('event/card.html.twig', { event: event, modifiableEventIds: modifiableEventIds, modalPrefix: 'favorites' }) }}
-
 							</div>
 						{% endfor %}
 					</div>
 				{% else %}
-					<p class="mt-3 text-white">Vous n'avez aucun événement en favori.</p>
+					<p class="mt-3 text-white">Vous n'avez ajouté aucun événement en favori.</p>
 				{% endif %}
 			</div>
+
 		</div>
 	</div>
 

@@ -22,6 +22,7 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 class EventController extends AbstractController
 {
+    // Liste publique des événements validés et non démarrés ou démarrés
     #[Route('/events', name: 'app_event_list')]
     public function listEvents(EventRepository $eventRepository): Response
     {
@@ -42,64 +43,79 @@ class EventController extends AbstractController
         ]);
     }
 
-    public function listValidatedEvents(EventRepository $eventRepository): Response
+    // Création d'un événement proposé par un utilisateur
+    #[Route('/event/new', name: 'app_event_create')]
+    #[IsGranted('ROLE_USER')]
+    public function create(Request $request, EntityManagerInterface $em): Response
     {
-        $events = $eventRepository->findValidatedEvents();
+        $event = new Event();
+        $form = $this->createForm(EventType::class, $event);
+        $form->handleRequest($request);
 
-        return $this->render('event/list.html.twig', [
-            'events' => $events,
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Initialisation de l'état d'approbation
+            $event->setIsApproved(false);
+            $event->setIsAdminApproved(false);
+            $event->setIsStarted(false);
+            $event->setOrganizer($this->getUser());
+
+            // Association image selon jeu sélectionné
+            $game = $event->getGame();
+            $imageMap = [
+                'CS2' => 'cs2.jpg',
+                'Dota2' => 'dota2.jpg',
+                'League of Legends' => 'lol.jpg',
+                'Rocket League' => 'rocketleague.jpg',
+                'Super Smash Bros.' => 'smashbros.jpg',
+                'TFT' => 'tft.jpg',
+                'Valorant' => 'valorant.jpg',
+            ];
+
+            if (isset($imageMap[$game])) {
+                $event->setImage($imageMap[$game]);
+            }
+
+            $em->persist($event);
+            $em->flush();
+
+            $this->addFlash('success', 'Votre événement a été proposé avec succès. En attente de validation.');
+
+            return $this->redirectToRoute('app_event_list');
+        }
+
+        return $this->render('event/create.html.twig', [
+            'form' => $form->createView(),
         ]);
     }
 
-    #[Route('/event/new', name: 'app_event_create')]
-#[IsGranted('ROLE_USER')]
-public function create(Request $request, EntityManagerInterface $em): Response
-{
-    $event = new Event();
-    $form = $this->createForm(EventType::class, $event);
-    $form->handleRequest($request);
-
-    if ($form->isSubmitted() && $form->isValid()) {
-        $event->setIsApproved(false);
-        $event->setIsAdminApproved(false);
-        $event->setIsStarted(false);
-        $event->setOrganizer($this->getUser());
-
-        // 🖼️ Logique pour associer une image au jeu choisi
-        $game = $event->getGame();
-        $imageMap = [
-            'CS2' => 'cs2.jpg',
-            'Dota2' => 'dota2.jpg',
-            'League of Legends' => 'lol.jpg',
-            'Rocket League' => 'rocketleague.jpg',
-            'Super Smash Bros.' => 'smashbros.jpg',
-            'TFT' => 'tft.jpg',
-            'Valorant' => 'valorant.jpg',
-        ];
-
-        if (isset($imageMap[$game])) {
-            $event->setImage($imageMap[$game]);
-        }
-
-        $em->persist($event);
-        $em->flush();
-
-        $this->addFlash('success', 'Votre événement a été proposé avec succès. En attente de validation.');
-
-        return $this->redirectToRoute('app_event_list');
-    }
-
-    return $this->render('event/create.html.twig', [
-        'form' => $form->createView(),
-    ]);
-}
-
-
+    // Affichage d'un événement (sans chat)
     #[Route('/event/{id}', name: 'app_event_show')]
-    public function show(Request $request, Event $event, EntityManagerInterface $em): Response
+    public function show(Event $event): Response
     {
         if (!$event->isApproved() || !$event->isAdminApproved()) {
             throw $this->createAccessDeniedException("Cet événement n'est pas encore publié.");
+        }
+
+        return $this->render('event/show.html.twig', [
+            'event' => $event,
+        ]);
+    }
+
+    // Page dédiée au chat de l'événement
+    #[Route('/event/{id}/chat', name: 'chat_event')]
+    #[IsGranted('ROLE_USER')]
+    public function chat(Request $request, Event $event, EntityManagerInterface $em): Response
+    {
+        if (!$event->isApproved() || !$event->isAdminApproved()) {
+            throw $this->createAccessDeniedException("Cet événement n'est pas encore publié.");
+        }
+
+        $user = $this->getUser();
+
+        // Vérifie que l'utilisateur est inscrit au tournoi
+        if (!$event->getParticipants()->contains($user)) {
+            $this->addFlash('error', 'Vous devez être inscrit pour accéder au chat.');
+            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
         }
 
         $message = new Message();
@@ -107,7 +123,7 @@ public function create(Request $request, EntityManagerInterface $em): Response
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $message->setAuthor($this->getUser());
+            $message->setAuthor($user);
             $message->setEvent($event);
             $message->setCreatedAt(new \DateTimeImmutable());
 
@@ -115,63 +131,61 @@ public function create(Request $request, EntityManagerInterface $em): Response
             $em->flush();
 
             $this->addFlash('success', 'Message envoyé !');
-            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+
+            return $this->redirectToRoute('chat_event', ['id' => $event->getId()]);
         }
 
         $messages = $event->getMessages();
 
-        return $this->render('event/show.html.twig', [
+        return $this->render('event/chat.html.twig', [
             'event' => $event,
             'messageForm' => $form->createView(),
             'messages' => $messages,
         ]);
     }
 
+    // Inscription à un événement (User)
     #[Route('/event/{id}/register', name: 'event_register')]
-#[IsGranted('ROLE_USER')]
-public function register(Event $event, EntityManagerInterface $em): RedirectResponse
-{
-    $user = $this->getUser();
+    #[IsGranted('ROLE_USER')]
+    public function register(Event $event, EntityManagerInterface $em): RedirectResponse
+    {
+        $user = $this->getUser();
 
-    // ❌ Vérification si l'événement est validé
-    if (!$event->isApproved() || !$event->isAdminApproved()) {
-        $this->addFlash('error', 'Cet événement n’est pas encore validé.');
-        return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
-    }
-
-    // ❌ Vérification si l'événement est terminé
-    if ($event->isFinished()) {
-        $this->addFlash('error', 'L\'événement est terminé, vous ne pouvez plus vous inscrire.');
-        return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
-    }
-
-    // ❌ Vérification si l'utilisateur est banni
-    foreach ($event->getEventBans() as $ban) {
-        if ($ban->getUser() === $user) {
-            $this->addFlash('error', '⚠️ Vous avez été banni de cet événement.');
+        if (!$event->isApproved() || !$event->isAdminApproved()) {
+            $this->addFlash('error', 'Cet événement n’est pas encore validé.');
             return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
         }
-    }
 
-    // ❌ Vérifie si l'événement est plein
-    if ($event->getParticipants()->count() >= $event->getMaxPlayers()) {
-        $this->addFlash('error', 'Le nombre maximal de participants est atteint.');
+        if ($event->isFinished()) {
+            $this->addFlash('error', 'L\'événement est terminé, vous ne pouvez plus vous inscrire.');
+            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+        }
+
+        // Vérification bannissement
+        foreach ($event->getEventBans() as $ban) {
+            if ($ban->getUser() === $user) {
+                $this->addFlash('error', '⚠️ Vous avez été banni de cet événement.');
+                return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+            }
+        }
+
+        if ($event->getParticipants()->count() >= $event->getMaxPlayers()) {
+            $this->addFlash('error', 'Le nombre maximal de participants est atteint.');
+            return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
+        }
+
+        if (!$event->getParticipants()->contains($user)) {
+            $event->addParticipant($user);
+            $em->flush();
+            $this->addFlash('success', '✅ Vous êtes inscrit au tournoi !');
+        } else {
+            $this->addFlash('info', 'ℹ️ Vous êtes déjà inscrit à cet événement.');
+        }
+
         return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
     }
 
-    // ✅ Inscription si non inscrit
-    if (!$event->getParticipants()->contains($user)) {
-        $event->addParticipant($user);
-        $em->flush();
-        $this->addFlash('success', '✅ Vous êtes inscrit au tournoi !');
-    } else {
-        $this->addFlash('info', 'ℹ️ Vous êtes déjà inscrit à cet événement.');
-    }
-
-    return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
-}
-
-
+    // Désinscription d'un événement
     #[Route('/event/{id}/unregister', name: 'event_unregister')]
     #[IsGranted('ROLE_USER')]
     public function unregister(Event $event, EntityManagerInterface $em): RedirectResponse
@@ -189,6 +203,7 @@ public function register(Event $event, EntityManagerInterface $em): RedirectResp
         return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
     }
 
+    // Modification d'un événement par son créateur tant que non démarré
     #[Route('/event/{id}/edit', name: 'user_event_update')]
     #[IsGranted('ROLE_USER')]
     public function update(Request $request, Event $event, EntityManagerInterface $em): Response
@@ -208,6 +223,7 @@ public function register(Event $event, EntityManagerInterface $em): RedirectResp
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Repassage en attente validation à chaque modif
             $event->setIsApproved(false);
             $event->setIsAdminApproved(false);
 
@@ -218,12 +234,13 @@ public function register(Event $event, EntityManagerInterface $em): RedirectResp
             return $this->redirectToRoute('app_profile');
         }
 
-        return $this->render('event/edit.html.twig', [
+        return $this->render('event/update.html.twig', [
             'form' => $form->createView(),
             'event' => $event,
         ]);
     }
 
+    // Suppression d'un événement par son créateur
     #[Route('/event/{id}/delete', name: 'user_event_delete')]
     #[IsGranted('ROLE_USER')]
     public function delete(Event $event, EntityManagerInterface $em): RedirectResponse
@@ -234,82 +251,56 @@ public function register(Event $event, EntityManagerInterface $em): RedirectResp
             throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer cet événement.');
         }
 
-        if ($event->isStarted()) {
-            $this->addFlash('error', 'Vous ne pouvez plus supprimer un événement déjà démarré.');
-            return $this->redirectToRoute('app_profile');
-        }
-
         $em->remove($event);
         $em->flush();
 
-        $this->addFlash('success', 'Événement supprimé avec succès.');
+        $this->addFlash('success', 'Événement supprimé.');
 
         return $this->redirectToRoute('app_profile');
     }
 
-    #[Route('/event/{id}/finish', name: 'event_finish', methods: ['POST'])]
-    #[IsGranted('ROLE_ORGANISATEUR')]
-    public function finishEvent(
-        Event $event,
-        Request $request,
-        EntityManagerInterface $em,
-        CsrfTokenManagerInterface $csrfTokenManager
-    ): JsonResponse {
-        $submittedToken = $request->request->get('_token');
-
-        if (!$csrfTokenManager->isTokenValid(new CsrfToken('finish_event' . $event->getId(), $submittedToken))) {
-            return new JsonResponse(['success' => false, 'message' => 'Jeton CSRF invalide.'], 400);
-        }
-
-        if ($event->isFinished()) {
-            return new JsonResponse(['success' => false, 'message' => 'Événement déjà terminé.'], 400);
-        }
-
-        $event->setIsFinished(true);
-        $this->distributePoints($event, $em);
-        $em->flush();
-
-        return new JsonResponse(['success' => true, 'message' => 'Événement terminé.']);
-    }
-
-    private function distributePoints(Event $event, EntityManagerInterface $em): void
+    // Terminer un événement (organisateur)
+    #[Route('/event/{id}/finish', name: 'organizer_event_finish')]
+    #[IsGranted('ROLE_ORGANIZER')]
+    public function finishEvent(Event $event, EntityManagerInterface $em): RedirectResponse
     {
-        foreach ($event->getParticipants() as $user) {
-            $currentPoints = $user->getPoints() ?? 0;
-            $user->setPoints($currentPoints + 10);
-            $em->persist($user);
+        if ($event->isStarted() && !$event->isFinished()) {
+            $event->setIsFinished(true);
+            $em->flush();
+            $this->addFlash('success', 'Événement terminé avec succès.');
+        } else {
+            $this->addFlash('error', 'Impossible de terminer cet événement.');
         }
+
+        return $this->redirectToRoute('app_profile');
     }
 
-    #[Route('/event/{eventId}/refuse/{userId}', name: 'app_event_refuse_participant', methods: ['POST'])]
-    public function refuseParticipant(
-        int $eventId,
-        int $userId,
-        EventRepository $eventRepo,
-        UserRepository $userRepo,
-        EntityManagerInterface $em,
-        Request $request
-    ): JsonResponse {
-        $event = $eventRepo->find($eventId);
-        $user = $userRepo->find($userId);
-
-        if (!$event || !$user) {
-            return new JsonResponse(['success' => false, 'message' => 'Utilisateur ou événement introuvable'], 404);
+    // Refuser la participation d'un joueur (organisateur)
+    #[Route('/event/{id}/refuse/{userId}', name: 'organizer_event_refuse')]
+    #[IsGranted('ROLE_ORGANISATEUR')]
+    public function refuseParticipant(Event $event, int $userId, UserRepository $userRepository, EntityManagerInterface $em): RedirectResponse
+    {
+        $userToBan = $userRepository->find($userId);
+        if (!$userToBan) {
+            $this->addFlash('error', 'Utilisateur introuvable.');
+            return $this->redirectToRoute('app_profile');
         }
 
-        if (!$this->isCsrfTokenValid('refuse_' . $eventId . '_' . $userId, $request->request->get('_token'))) {
-            return new JsonResponse(['success' => false, 'message' => 'Token CSRF invalide'], 400);
+        // Ajouter un bannissement temporaire à l'événement
+        $eventBan = new EventBan();
+        $eventBan->setUser($userToBan);
+        $eventBan->setEvent($event);
+        $em->persist($eventBan);
+
+        // Retirer participant de l'événement
+        if ($event->getParticipants()->contains($userToBan)) {
+            $event->removeParticipant($userToBan);
         }
-
-        $event->removeParticipant($user);
-
-        $ban = new EventBan();
-        $ban->setEvent($event);
-        $ban->setUser($user);
-        $em->persist($ban);
 
         $em->flush();
 
-        return new JsonResponse(['success' => true, 'message' => 'Utilisateur exclu et ajouté à la liste noire.']);
+        $this->addFlash('success', 'Participation refusée et utilisateur banni.');
+
+        return $this->redirectToRoute('app_profile');
     }
 }

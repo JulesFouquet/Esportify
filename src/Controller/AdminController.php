@@ -17,16 +17,17 @@ use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 #[Route('/admin')]
-#[IsGranted('ROLE_ADMIN')]
+#[IsGranted('ROLE_ADMIN')] // Contrôle d'accès global, seul admin peut accéder à ce contrôleur
 class AdminController extends AbstractController
 {
     private $csrfTokenManager;
 
     public function __construct(CsrfTokenManagerInterface $csrfTokenManager)
     {
-        $this->csrfTokenManager = $csrfTokenManager;
+        $this->csrfTokenManager = $csrfTokenManager; // Injection du gestionnaire de tokens CSRF
     }
 
+    // Page d'accueil du panneau admin affichant la liste des utilisateurs
     #[Route('/', name: 'admin_dashboard')]
     public function dashboard(UserRepository $userRepository): Response
     {
@@ -37,11 +38,13 @@ class AdminController extends AbstractController
         ]);
     }
 
+    // Promotion d'un utilisateur à un rôle spécifique (ex: organisateur, admin)
     #[Route('/promote/{id}/{role}', name: 'admin_promote')]
     public function promote(User $user, string $role, EntityManagerInterface $em): Response
     {
         $allowedRoles = ['ROLE_ORGANISATEUR', 'ROLE_ADMIN'];
 
+        // Vérification du rôle demandé
         if (!in_array($role, $allowedRoles)) {
             $this->addFlash('danger', 'Rôle non autorisé.');
             return $this->redirectToRoute('admin_dashboard');
@@ -49,6 +52,7 @@ class AdminController extends AbstractController
 
         $roles = $user->getRoles();
 
+        // Ajout du rôle s'il n'existe pas déjà
         if (!in_array($role, $roles)) {
             $roles[] = $role;
             $user->setRoles(array_unique($roles));
@@ -62,10 +66,11 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_dashboard');
     }
 
+    // Rétrogradation d'un utilisateur en retirant un rôle donné
     #[Route('/demote/{id}/{role}', name: 'admin_demote')]
     public function demote(User $user, string $role, EntityManagerInterface $em): Response
     {
-        $protectedRoles = ['ROLE_USER']; // Ne jamais retirer ROLE_USER
+        $protectedRoles = ['ROLE_USER']; // Rôle obligatoire, ne doit jamais être retiré
         $allRoles = $user->getRoles();
 
         if (in_array($role, $protectedRoles)) {
@@ -73,6 +78,7 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('admin_dashboard');
         }
 
+        // Retrait du rôle si présent
         if (in_array($role, $allRoles)) {
             $newRoles = array_filter($allRoles, fn($r) => $r !== $role);
             $user->setRoles(array_values($newRoles));
@@ -86,10 +92,11 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_dashboard');
     }
 
+    // Liste des événements en attente d'approbation par l'admin
     #[Route('/pending-events', name: 'admin_pending_events')]
     public function pendingEvents(EventRepository $eventRepository): Response
     {
-        // On récupère les événements non approuvés par l'admin
+        // Récupère les événements non approuvés par l'admin
         $pendingEvents = $eventRepository->findBy(['isAdminApproved' => false]);
 
         return $this->render('admin/pending_events.html.twig', [
@@ -97,6 +104,7 @@ class AdminController extends AbstractController
         ]);
     }
 
+    // Validation d'un événement (passage à approuvé)
     #[Route('/approve-event/{id}', name: 'admin_approve_event')]
     public function approveEvent(Event $event, EntityManagerInterface $em): Response
     {
@@ -108,6 +116,7 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_pending_events');
     }
 
+    // Refus et suppression d'un événement
     #[Route('/reject-event/{id}', name: 'admin_reject_event')]
     public function rejectEvent(Event $event, EntityManagerInterface $em): Response
     {
@@ -119,18 +128,18 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_pending_events');
     }
 
-    // --- Nouvelle route pour mise à jour de l'événement depuis modale admin ---
+    // Mise à jour d'un événement depuis une modale (formulaire POST)
     #[Route('/event/update/{id}', name: 'admin_event_update', methods: ['POST'])]
     public function updateEvent(Request $request, Event $event, EntityManagerInterface $em): Response
     {
-        // Vérification CSRF
+        // Vérification du token CSRF pour sécuriser la requête
         $submittedToken = $request->request->get('_token');
         if (!$this->csrfTokenManager->isTokenValid(new CsrfToken('update_event' . $event->getId(), $submittedToken))) {
             $this->addFlash('danger', 'Token CSRF invalide.');
             return $this->redirectToRoute('admin_dashboard');
         }
 
-        // Récupération des données du formulaire
+        // Récupération et validation simple des données postées
         $title = $request->request->get('title');
         $startDateTimeStr = $request->request->get('startDateTime');
         $endDateTimeStr = $request->request->get('endDateTime');
@@ -138,7 +147,6 @@ class AdminController extends AbstractController
         $isStarted = $request->request->has('isStarted');
         $maxPlayers = $request->request->get('maxPlayers');
 
-        // Validation simple (tu peux améliorer si besoin)
         if (!$title || !$startDateTimeStr || !$endDateTimeStr || !$maxPlayers) {
             $this->addFlash('danger', 'Tous les champs obligatoires doivent être remplis.');
             return $this->redirectToRoute('admin_dashboard');
@@ -152,7 +160,7 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('admin_dashboard');
         }
 
-        // Mise à jour de l'entité
+        // Mise à jour des propriétés de l'entité Event
         $event->setTitle($title);
         $event->setStartDateTime($startDateTime);
         $event->setEndDateTime($endDateTime);
@@ -164,10 +172,10 @@ class AdminController extends AbstractController
 
         $this->addFlash('success', 'Événement mis à jour avec succès.');
 
-        return $this->redirectToRoute('organisateur_events'); // ou la route où tu listes les events
+        return $this->redirectToRoute('organisateur_events'); // Redirection vers la liste des events organisateur
     }
 
-    // --- Nouvelle route pour suppression de l'événement ---
+    // Suppression d'un événement (GET/POST)
     #[Route('/event/delete/{id}', name: 'admin_event_delete', methods: ['GET', 'POST'])]
     public function deleteEvent(Event $event, EntityManagerInterface $em): RedirectResponse
     {
@@ -176,6 +184,6 @@ class AdminController extends AbstractController
 
         $this->addFlash('success', 'Événement supprimé avec succès.');
 
-        return $this->redirectToRoute('organisateur_events'); // ou la route où tu listes les events
+        return $this->redirectToRoute('organisateur_events'); // Redirection vers la liste des events organisateur
     }
 }
