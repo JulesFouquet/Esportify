@@ -1,0 +1,91 @@
+body {
+    background-color: #111;
+    color: #fff;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.contact-container {
+    background: #1a1a1a;
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 2rem auto;
+}
+
+.contact-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.contact-title span {
+    color: #3399ff;
+}
+
+.contact-subtitle {
+    text-align: center;
+    color: #3399ff;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #ddd;
+    font-weight: 500;
+}
+
+input[type="text"],
+textarea {
+    background-color: #222;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 0.5rem;
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    border-color: #3399ff;
+    box-shadow: 0 0 5px rgba(51, 153, 255, 0.5);
+    outline: none;
+}
+
+textarea {
+    min-height: 300px;
+    resize: none;
+}
+
+.button-container {
+    text-align: right;
+    margin-top: 1rem;
+}
+
+.submit-btn {
+    background-color: #3399ff;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    padding: 0.5rem 1.2rem;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-btn:hover {
+    background-color: #287bcc;
+}
+
+.alert-success {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}

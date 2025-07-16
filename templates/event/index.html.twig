@@ -51,7 +51,7 @@
 					<div class="row" id="ongoingList">
 						{% for event in ongoingEvents %}
 							<div class="col-md-6 mb-3" data-date="{{ event.startDateTime.timestamp }}" data-players="{{ event.participantsCount }}" data-organizer="{{ event.organizer.pseudo|lower }}">
-								{{ include('event/card.html.twig', { event: event , modalPrefix: 'tournement', modifiableEventIds: []}) }}
+								{{ include('event/card.html.twig', { event: event, modalPrefix: 'tournement', modifiableEventIds: [] }) }}
 							</div>
 						{% endfor %}
 					</div>
@@ -66,7 +66,7 @@
 					<div class="row" id="upcomingList">
 						{% for event in upcomingEvents %}
 							<div class="col-md-6 mb-3" data-date="{{ event.startDateTime.timestamp }}" data-players="{{ event.participantsCount }}" data-organizer="{{ event.organizer.pseudo|lower }}">
-								{{ include('event/card.html.twig', { event: event , modalPrefix: 'tournement', modifiableEventIds: []}) }}
+								{{ include('event/card.html.twig', { event: event, modalPrefix: 'tournement', modifiableEventIds: [] }) }}
 							</div>
 						{% endfor %}
 					</div>
@@ -89,17 +89,12 @@
 		.event-card {
 			border: 3px solid #3399ff !important;
 		}
-
-		#ongoingEvents > h4 {
-			color: #f8f9fa !important;
-		}
-
+		#ongoingEvents > h4,
 		#upcomingEvents > h4 {
 			color: #f8f9fa !important;
 		}
 	</style>
 {% endblock %}
-
 
 {% block javascripts %}
 	{{ parent() }}
@@ -111,31 +106,24 @@ const ongoing = document.getElementById('ongoingEvents');
 const upcoming = document.getElementById('upcomingEvents');
 const sortSelect = document.getElementById('sort');
 
-btnOngoing.addEventListener('click', function () {
-btnOngoing.classList.add('active');
-btnUpcoming.classList.remove('active');
-ongoing.classList.remove('d-none');
-upcoming.classList.add('d-none');
-});
+btnOngoing.addEventListener('click', () => toggleView(true));
+btnUpcoming.addEventListener('click', () => toggleView(false));
 
-btnUpcoming.addEventListener('click', function () {
-btnUpcoming.classList.add('active');
-btnOngoing.classList.remove('active');
-upcoming.classList.remove('d-none');
-ongoing.classList.add('d-none');
-});
+function toggleView(showOngoing) {
+btnOngoing.classList.toggle('active', showOngoing);
+btnUpcoming.classList.toggle('active', ! showOngoing);
+ongoing.classList.toggle('d-none', ! showOngoing);
+upcoming.classList.toggle('d-none', showOngoing);
+}
 
-sortSelect.addEventListener('change', function () {
-const sortBy = this.value;
-sortEventList('ongoingList', sortBy);
-sortEventList('upcomingList', sortBy);
+sortSelect.addEventListener('change', () => {
+['ongoingList', 'upcomingList'].forEach(listId => sortEventList(listId, sortSelect.value));
 });
 
 function sortEventList(listId, sortBy) {
 const container = document.getElementById(listId);
 if (! container) 
 return;
-
 
 
 const items = Array.from(container.children);
@@ -146,44 +134,23 @@ let bVal = b.dataset[sortBy];
 if (sortBy === 'organizer') {
 return aVal.localeCompare(bVal);
 } else {
-let numA = parseInt(aVal, 10);
-let numB = parseInt(bVal, 10);
-if (isNaN(numA)) 
-numA = 0;
-
-
-
-if (isNaN(numB)) 
-numB = 0;
-
-
-
-return numA - numB;
+return(parseInt(aVal, 10) || 0) - (parseInt(bVal, 10) || 0);
 }
 });
-
 items.forEach(item => container.appendChild(item));
 }
-});
 
-document.addEventListener('DOMContentLoaded', function () {
-
-// --- Ton code de gestion des onglets + tri (celui que tu as déjà) ---
-
-// Ajout de la gestion des clics sur les étoiles dans les modales
-function initFavoriteStars() {
-const stars = document.querySelectorAll('.fa-star-toggle');
-
-stars.forEach(star => {
-star.addEventListener('click', function (e) {
-e.stopPropagation(); // pour éviter que la modale ne se ferme ou autre
+// Event delegation pour les étoiles
+document.body.addEventListener('click', function (e) {
+if (e.target.classList.contains('fa-star-toggle')) {
+e.stopPropagation();
+const star = e.target;
+const eventId = star.dataset.eventId;
 
 if (!window.csrfToken) {
 console.error('CSRF token manquant');
 return;
 }
-
-const eventId = this.dataset.eventId;
 
 fetch('/favoris/toggle/' + eventId, {
 method: 'POST',
@@ -191,33 +158,18 @@ headers: {
 'X-CSRF-TOKEN': window.csrfToken,
 'X-Requested-With': 'XMLHttpRequest'
 }
-}).then(response => {
-if (!response.ok) 
-throw new Error('Erreur réseau');
-
-
-
-return response.json();
-}).then(data => {
+}).then(response => response.json()).then(data => {
 if (data.status === 'added') {
-this.classList.remove('fa-regular');
-this.classList.add('fa-solid');
-this.title = 'Retirer des favoris';
+star.classList.replace('fa-regular', 'fa-solid');
+star.title = 'Retirer des favoris';
 } else if (data.status === 'removed') {
-this.classList.remove('fa-solid');
-this.classList.add('fa-regular');
-this.title = 'Ajouter aux favoris';
+star.classList.replace('fa-solid', 'fa-regular');
+star.title = 'Ajouter aux favoris';
 }
 console.log('Favori togglé:', data);
-}).catch(error => {
-console.error('Erreur toggle favori:', error);
-});
-});
-});
+}).catch(error => console.error('Erreur toggle favori:', error));
 }
-
-initFavoriteStars();
-
+});
 });
 	</script>
 {% endblock %}

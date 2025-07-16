@@ -18,6 +18,7 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 class ProfileController extends AbstractController
 {
+    // Affiche la page de profil avec les favoris, événements créés, inscrits et scores de l'utilisateur connecté
     #[Route('/profile', name: 'app_profile')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function profile(EventRepository $eventRepository, ScoreRepository $scoreRepository): JsonResponse|Response
@@ -58,7 +59,7 @@ class ProfileController extends AbstractController
         // Scores de l'utilisateur
         $scores = $scoreRepository->findBy(['player' => $user]);
 
-        // ✅ Nouvel ajout : événements où l'utilisateur est inscrit
+        // Événements où l'utilisateur est inscrit
         $registeredEvents = $eventRepository->createQueryBuilder('e')
             ->innerJoin('e.participants', 'p')
             ->where('p.id = :userId')
@@ -67,16 +68,17 @@ class ProfileController extends AbstractController
             ->getResult();
 
         return $this->render('profile/index.html.twig', [
-    'user' => $user,
-    'favoriteEvents' => $favoriteEvents,
-    'createdEvents' => $approvedEvents,   // ✅ renommer ici
-    'pendingEvents' => $pendingEvents,
-    'modifiableEventIds' => $modifiableEventIds,
-    'scores' => $scores,
-    'registeredEvents' => $registeredEvents,
-]);
+            'user' => $user,
+            'favoriteEvents' => $favoriteEvents,
+            'createdEvents' => $approvedEvents,
+            'pendingEvents' => $pendingEvents,
+            'modifiableEventIds' => $modifiableEventIds,
+            'scores' => $scores,
+            'registeredEvents' => $registeredEvents,
+        ]);
     }
 
+    // Toggle l'ajout ou la suppression d'un événement dans les favoris de l'utilisateur via requête AJAX
     #[Route('/favoris/toggle/{id}', name: 'app_profile_favorite_toggle', methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function toggleFavorite(Event $event, EntityManagerInterface $em, Request $request, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
@@ -110,6 +112,7 @@ class ProfileController extends AbstractController
         ]);
     }
 
+    // Permet à l'utilisateur de modifier un événement qu'il a créé, uniquement avant son début, avec vérification CSRF
     #[Route('/profil/event/update/{id}', name: 'user_event_update', methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function updateEvent(Request $request, Event $event, EntityManagerInterface $em, CsrfTokenManagerInterface $csrfTokenManager): Response

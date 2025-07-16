@@ -35,7 +35,7 @@ class ContactController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Ici tu peux ajouter le traitement du message (ex: envoyer email, sauvegarder en base...)
+            // Ici ajouter la logique pour envoyer un mail (mailer par exemple + ini dans .env)
             $this->addFlash('success', 'Votre message a été envoyé avec succès !');
             return $this->redirectToRoute('app_contact');
         }

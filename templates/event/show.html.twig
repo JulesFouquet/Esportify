@@ -67,7 +67,9 @@
 		{% endfor %}
 	</div>
 {% endblock %}
-
+{% block stylesheets %}
+	<link rel="stylesheet" href="{{ asset('css/event/show.css') }}">
+{% endblock %}
 {% block javascripts %}
 	{{ parent() }}
 	<script>
@@ -78,84 +80,4 @@ toast.show();
 });
 });
 	</script>
-{% endblock %}
-
-{% block stylesheets %}
-	{{ parent() }}
-	<style>
-		/* styles repris à l'identique pour cohérence */
-		body {
-			background-color: #111;
-			color: #fff;
-			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-		}
-		.event-container {
-			background: #1a1a1a;
-			border-radius: 1rem;
-			padding: 2rem;
-			max-width: 800px;
-			margin: 2rem auto 4rem;
-			box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
-		}
-		.event-title {
-			font-size: 2.5rem;
-			font-weight: 700;
-			text-align: center;
-			margin-bottom: 1rem;
-			color: #3399ff;
-		}
-		.event-description {
-			font-size: 1.2rem;
-			margin-bottom: 2rem;
-			color: #ddd;
-			text-align: center;
-		}
-		.event-info p {
-			font-size: 1rem;
-			margin: 0.25rem 0;
-			color: #ccc;
-		}
-		.event-info strong {
-			color: #eee;
-		}
-		.event-actions {
-			text-align: center;
-			margin: 2rem 0;
-		}
-		.btn {
-			padding: 0.6rem 1.5rem;
-			font-weight: 600;
-			border-radius: 0.5rem;
-			transition: background-color 0.3s ease;
-			font-size: 1rem;
-		}
-		.btn-primary {
-			background-color: #3399ff;
-			border: none;
-			color: #fff;
-		}
-		.btn-primary:hover {
-			background-color: #287bcc;
-			color: #fff;
-		}
-		.btn-danger {
-			background-color: #dc3545;
-			border: none;
-			color: #fff;
-		}
-		.btn-danger:hover {
-			background-color: #bb2d3b;
-			color: #fff;
-		}
-		.btn-secondary {
-			background-color: #555;
-			border: none;
-			color: #eee;
-			cursor: default;
-		}
-		.btn-secondary:disabled {
-			opacity: 0.7;
-			cursor: not-allowed;
-		}
-	</style>
 {% endblock %}

@@ -34,6 +34,10 @@ class EventBan
         $this->createdAt = new \DateTime();
     }
 
+
+     // -------------------- GETTERS & SETTERS --------------------
+
+     
     public function getId(): ?int
     {
         return $this->id;

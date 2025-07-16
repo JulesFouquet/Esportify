@@ -89,6 +89,10 @@ private ?string $image = null;
         $this->eventBans = new ArrayCollection();
     }
 
+
+     // -------------------- GETTERS & SETTERS --------------------
+
+     
     public function getId(): ?int
     {
         return $this->id;
@@ -373,7 +377,6 @@ public function addEventBan(EventBan $eventBan): self
 public function removeEventBan(EventBan $eventBan): self
 {
     if ($this->eventBans->removeElement($eventBan)) {
-        // set the owning side to null (unless already changed)
         if ($eventBan->getEvent() === $this) {
             $eventBan->setEvent(null);
         }

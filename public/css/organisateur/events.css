@@ -1,0 +1,242 @@
+h2,
+h5 {
+    color: #f5f5f5;
+}
+
+small {
+    color: #bbb;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-success {
+    background: #198754;
+    color: #fff;
+}
+.btn-success:hover {
+    background: #157347;
+}
+
+.btn-primary {
+    background: #0d6efd;
+    color: #fff;
+}
+.btn-primary:hover {
+    background: #0b5ed7;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: #fff;
+}
+.btn-danger:hover {
+    background: #bb2d3b;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-info-dark {
+    background-color: #0a58ca;
+    border-color: #0a58ca;
+    color: #fff;
+}
+
+.btn-info-dark:hover,
+.btn-info-dark:focus {
+    background-color: #084298;
+    border-color: #084298;
+    color: #fff;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+.btn-secondary:hover {
+    background: #565e64;
+}
+.event-list {
+    margin: 30px;
+    padding: 30px;
+    list-style: none;
+}
+.event-card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+}
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.event-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+.alert p {
+    color: #f5f5f5;
+    font-size: 0.9em;
+}
+
+/* Modal */
+.modal-content {
+    background: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+}
+
+.modal-header,
+.modal-footer {
+    border-color: #333;
+}
+
+.form-control {
+    background: #2c2c2c;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    padding: 6px;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    outline: none;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+}
+
+/* CSS POUR MODAL */
+
+/* Style harmonisé pour toutes les modales */
+.modal-content.modal-content-custom {
+    background-color: #2b2b2b; /* Fond sombre */
+    color: #f8f9fa; /* Texte clair */
+    border-radius: 0.75rem; /* Coins arrondis */
+}
+
+/* Centrer et donner un peu d’air au titre */
+.modal-title {
+    text-align: center;
+    width: 100%;
+    font-weight: 600;
+    color: #0d6efd; /* Même bleu que la bordure */
+}
+
+/* Uniformiser padding header et footer + border plus discrète */
+.modal-header,
+.modal-footer {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #444; /* Séparateurs sombres et fins */
+    border-top: none;
+    background-color: #2b2b2b; /* Même fond que le body */
+}
+
+/* Corps de la modale */
+.modal-body {
+    background-color: #2b2b2b; /* Fond sombre aussi */
+}
+
+/* Labels des formulaires et textes secondaires */
+.form-label,
+.form-check-label {
+    color: #dddddd; /* Gris clair */
+}
+
+/* Style cohérent des boutons */
+.modal-footer .btn-primary,
+.modal-footer .btn-success {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+}
+
+.modal-footer .btn-primary:hover,
+.modal-footer .btn-success:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Bouton refuser plus petit et harmonieux */
+.participant-entry .btn-outline-danger {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.participant-entry .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* Icône utilisateur un peu plus discrète */
+.participant-entry i.fas.fa-user {
+    color: #6c757d; /* gris Bootstrap */
+}
+
+/* Liste des participants sombre et lisible */
+.list-group-item {
+    background-color: #3a3a3a;
+    color: #f8f9fa;
+    border-color: #555;
+}
+
+/* Fond sombre pour chaque ligne de la liste */
+.list-group-item.participant-entry {
+    background-color: #3a3a3a; /* Fond gris sombre */
+    color: #f8f9fa; /* Texte clair */
+    border-color: #555; /* Bordures plus foncées */
+}
+
+/* Optionnel : espacement et alignement plus joli */
+.participant-name {
+    padding-right: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Centrer le bouton verticalement si besoin */
+.participant-action {
+    display: flex;
+    align-items: center;
+}

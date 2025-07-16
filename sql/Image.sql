@@ -1,0 +1,9 @@
+/* SQL POUR l'ENTITY IMAGE*/
+
+CREATE TABLE image (
+    id INT AUTO_INCREMENT NOT NULL,
+    event_id INT DEFAULT NULL,
+    path VARCHAR(255) NOT NULL,
+    PRIMARY KEY(id),
+    CONSTRAINT FK_image_event FOREIGN KEY (event_id) REFERENCES event(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

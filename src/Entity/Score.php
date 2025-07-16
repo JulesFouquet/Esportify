@@ -24,6 +24,10 @@ class Score
     #[ORM\Column]
     private ?int $points = null;
 
+
+     // -------------------- GETTERS & SETTERS --------------------
+
+
     public function getId(): ?int
     {
         return $this->id;
@@ -66,11 +70,11 @@ class Score
     }
 
     /**
-     * Crée un objet Score avec points calculés selon le rang
+     * Pas mis en place finalement reste une idée
      *
      * @param User $player
      * @param Event $event
-     * @param int $rank Rang du joueur (1 = premier, 2 = deuxième, etc.)
+     * @param int $rank 
      * @return self
      */
     public static function createScoreForPlayer(User $player, Event $event, int $rank): self

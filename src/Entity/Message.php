@@ -36,6 +36,10 @@ class Message
         $this->createdAt = new \DateTimeImmutable();
     }
 
+
+     // -------------------- GETTERS & SETTERS --------------------
+
+     
     public function getId(): ?int
     {
         return $this->id;

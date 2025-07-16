@@ -24,6 +24,7 @@ class RegistrationController extends AbstractController
     {
     }
 
+    // Gère l'inscription d'un nouvel utilisateur : formulaire, validation, hash du mot de passe, envoi email confirmation, connexion automatique
     #[Route('/register', name: 'app_register')]
     public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, Security $security, EntityManagerInterface $entityManager): Response
     {
@@ -34,25 +35,26 @@ class RegistrationController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $plainPassword = $form->get('plainPassword')->getData();
 
-            // encode the plain password
+            // encode du plain password
             $user->setPassword($userPasswordHasher->hashPassword($user, $plainPassword));
 
             $entityManager->persist($user);
             $entityManager->flush();
 
-            // send confirmation email
+            // Envoi de l'email de confirmation
             $this->emailVerifier->sendEmailConfirmation('app_verify_email', $user,
                 (new TemplatedEmail())
-                    ->from(new Address('julesfouquetprowd@gmail.com', 'Jules'))
+                    ->from(new Address('julesfouquet@exemple.com', 'Jules'))
                     ->to((string) $user->getEmail())
                     ->subject('Please Confirm your Email')
                     ->htmlTemplate('registration/confirmation_email.html.twig')
             );
 
+            // Connexion automatique après inscription réussie
             return $security->login($user, LoginFormAuthenticator::class, 'main');
         }
 
-        // si soumis et invalide → ajouter erreurs en flash
+        // Si formulaire soumis mais invalide, on ajoute les erreurs en flash pour affichage
         if ($form->isSubmitted() && !$form->isValid()) {
             foreach ($form->getErrors(true) as $error) {
                 $this->addFlash('error', $error->getMessage());
@@ -64,6 +66,7 @@ class RegistrationController extends AbstractController
         ]);
     }
 
+    // Vérifie le lien de confirmation envoyé par email, valide l'adresse et affiche un message de succès ou d'erreur
     #[Route('/verify/email', name: 'app_verify_email')]
     public function verifyUserEmail(Request $request, TranslatorInterface $translator): Response
     {

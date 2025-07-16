@@ -17,14 +17,14 @@ use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 #[Route('/admin')]
-#[IsGranted('ROLE_ADMIN')] // Contrôle d'accès global, seul admin peut accéder à ce contrôleur
+#[IsGranted('ROLE_ADMIN')]
 class AdminController extends AbstractController
 {
     private $csrfTokenManager;
 
     public function __construct(CsrfTokenManagerInterface $csrfTokenManager)
     {
-        $this->csrfTokenManager = $csrfTokenManager; // Injection du gestionnaire de tokens CSRF
+        $this->csrfTokenManager = $csrfTokenManager;
     }
 
     // Page d'accueil du panneau admin affichant la liste des utilisateurs
@@ -38,13 +38,12 @@ class AdminController extends AbstractController
         ]);
     }
 
-    // Promotion d'un utilisateur à un rôle spécifique (ex: organisateur, admin)
+    // Promotion d'un utilisateur à un rôle spécifique (ex: user, organisateur)
     #[Route('/promote/{id}/{role}', name: 'admin_promote')]
     public function promote(User $user, string $role, EntityManagerInterface $em): Response
     {
         $allowedRoles = ['ROLE_ORGANISATEUR', 'ROLE_ADMIN'];
 
-        // Vérification du rôle demandé
         if (!in_array($role, $allowedRoles)) {
             $this->addFlash('danger', 'Rôle non autorisé.');
             return $this->redirectToRoute('admin_dashboard');
@@ -52,7 +51,6 @@ class AdminController extends AbstractController
 
         $roles = $user->getRoles();
 
-        // Ajout du rôle s'il n'existe pas déjà
         if (!in_array($role, $roles)) {
             $roles[] = $role;
             $user->setRoles(array_unique($roles));
@@ -70,7 +68,7 @@ class AdminController extends AbstractController
     #[Route('/demote/{id}/{role}', name: 'admin_demote')]
     public function demote(User $user, string $role, EntityManagerInterface $em): Response
     {
-        $protectedRoles = ['ROLE_USER']; // Rôle obligatoire, ne doit jamais être retiré
+        $protectedRoles = ['ROLE_USER'];
         $allRoles = $user->getRoles();
 
         if (in_array($role, $protectedRoles)) {
@@ -96,7 +94,6 @@ class AdminController extends AbstractController
     #[Route('/pending-events', name: 'admin_pending_events')]
     public function pendingEvents(EventRepository $eventRepository): Response
     {
-        // Récupère les événements non approuvés par l'admin
         $pendingEvents = $eventRepository->findBy(['isAdminApproved' => false]);
 
         return $this->render('admin/pending_events.html.twig', [
@@ -175,7 +172,7 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('organisateur_events'); // Redirection vers la liste des events organisateur
     }
 
-    // Suppression d'un événement (GET/POST)
+    // Suppression d'un événement
     #[Route('/event/delete/{id}', name: 'admin_event_delete', methods: ['GET', 'POST'])]
     public function deleteEvent(Event $event, EntityManagerInterface $em): RedirectResponse
     {

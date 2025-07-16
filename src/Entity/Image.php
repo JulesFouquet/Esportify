@@ -20,6 +20,10 @@ class Image
     #[ORM\ManyToOne(inversedBy: 'images')]
     private ?Event $event = null;
 
+    
+     // -------------------- GETTERS & SETTERS --------------------
+
+     
     public function getId(): ?int
     {
         return $this->id;

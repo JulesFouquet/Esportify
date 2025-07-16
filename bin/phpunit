@@ -5,19 +5,22 @@ if (!ini_get('date.timezone')) {
     ini_set('date.timezone', 'UTC');
 }
 
-if (is_file(dirname(__DIR__).'/vendor/phpunit/phpunit/phpunit')) {
-    if (PHP_VERSION_ID >= 80000) {
-        require dirname(__DIR__).'/vendor/phpunit/phpunit/phpunit';
-    } else {
-        define('PHPUNIT_COMPOSER_INSTALL', dirname(__DIR__).'/vendor/autoload.php');
-        require PHPUNIT_COMPOSER_INSTALL;
-        PHPUnit\TextUI\Command::main();
-    }
-} else {
-    if (!is_file(dirname(__DIR__).'/vendor/symfony/phpunit-bridge/bin/simple-phpunit.php')) {
-        echo "Unable to find the `simple-phpunit.php` script in `vendor/symfony/phpunit-bridge/bin/`.\n";
-        exit(1);
-    }
-
+// ✅ Vérifier si on a le bridge Symfony
+if (is_file(dirname(__DIR__).'/vendor/symfony/phpunit-bridge/bin/simple-phpunit.php')) {
     require dirname(__DIR__).'/vendor/symfony/phpunit-bridge/bin/simple-phpunit.php';
+    // Le bridge s'occupe de tout (choix de la bonne version de PHPUnit, etc.)
+    exit(0);
 }
+
+// ✅ Sinon, vérifier si on a directement PHPUnit installé via Composer
+if (is_file(dirname(__DIR__).'/vendor/autoload.php')) {
+    require dirname(__DIR__).'/vendor/autoload.php';
+
+    // Exécuter vendor/bin/phpunit directement
+    passthru('vendor/bin/phpunit', $exitCode);
+    exit($exitCode);
+}
+
+// ❌ Sinon, message d'erreur clair
+echo "Unable to find PHPUnit. Please install it with Composer.\n";
+exit(1);

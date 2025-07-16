@@ -12,6 +12,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class OrganisateurController extends AbstractController
 {
+    // Affiche la liste des événements proposés en attente d'approbation par l'organisateur
     #[Route('/organisateur/events/propositions', name: 'organisateur_event_proposals')]
     #[IsGranted('ROLE_ORGANISATEUR')]
     public function viewProposedEvents(EventRepository $eventRepository): Response
@@ -25,6 +26,7 @@ class OrganisateurController extends AbstractController
         ]);
     }
 
+    // Approuve un événement proposé et le marque comme validé par un organisateur
     #[Route('/organisateur/event/{id}/approve', name: 'organisateur_event_approve')]
     #[IsGranted('ROLE_ORGANISATEUR')]
     public function approveEvent(int $id, EventRepository $eventRepository, EntityManagerInterface $em): Response
@@ -45,6 +47,7 @@ class OrganisateurController extends AbstractController
         return $this->redirectToRoute('organisateur_event_proposals');
     }
 
+    // Rejette et supprime un événement proposé
     #[Route('/organisateur/event/{id}/reject', name: 'organisateur_event_reject')]
     #[IsGranted('ROLE_ORGANISATEUR')]
     public function rejectEvent(int $id, EventRepository $eventRepository, EntityManagerInterface $em): Response
@@ -62,6 +65,7 @@ class OrganisateurController extends AbstractController
         return $this->redirectToRoute('organisateur_event_proposals');
     }
 
+    // Affiche la liste des événements approuvés par l'organisateur
     #[Route('/organisateur/events', name: 'organisateur_events')]
     #[IsGranted('ROLE_ORGANISATEUR')]
     public function events(EventRepository $eventRepository): Response
@@ -76,6 +80,7 @@ class OrganisateurController extends AbstractController
         ]);
     }
 
+    // Démarre un événement (accessible uniquement dans la fenêtre autorisée et avec token CSRF valide)
     #[Route('/organisateur/event/{id}/start', name: 'organisateur_event_start', methods: ['POST'])]
     #[IsGranted('ROLE_ORGANISATEUR')]
     public function startEvent(int $id, Request $request, EntityManagerInterface $em, EventRepository $eventRepository): Response
