@@ -10,6 +10,8 @@
         "doctrine/dbal": "^3",
         "doctrine/doctrine-bundle": "^2.15",
         "doctrine/doctrine-migrations-bundle": "^3.4",
+        "doctrine/mongodb-odm": "^2.10",
+        "doctrine/mongodb-odm-bundle": "^5.3",
         "doctrine/orm": "^3.4",
         "easycorp/easyadmin-bundle": "^4.24",
         "phpdocumentor/reflection-docblock": "^5.6",
@@ -100,6 +102,7 @@
         }
     },
     "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "^4.1",
         "phpunit/phpunit": "^12.2",
         "symfony/browser-kit": "7.3.*",
         "symfony/css-selector": "7.3.*",

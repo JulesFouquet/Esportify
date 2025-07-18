@@ -13,24 +13,40 @@
 			<div class="alert-success">{{ message }}</div>
 		{% endfor %}
 
-		<p class="mb-4">
-			<strong>{{ pseudo }}</strong>
-		</p>
+		{% if pseudo %}
+			<p class="mb-4">
+				<strong>{{ pseudo }}</strong>
+			</p>
+		{% endif %}
 
-		{{ form_start(contactForm) }}
-		<div class="mb-3">
-			{{ form_label(contactForm.subject) }}
-			{{ form_widget(contactForm.subject, {'attr': {'type': 'text'}}) }}
-		</div>
-		<div class="mb-3">
-			{{ form_label(contactForm.message) }}
-			{{ form_widget(contactForm.message) }}
-		</div>
-		<div class="button-container">
-			{{ form_widget(contactForm.send, {'attr': {'class': 'submit-btn'}}) }}
-		</div>
-		{{ form_end(contactForm) }}
+		{% if contactForm %}
+			{{ form_start(contactForm) }}
+			<div class="mb-3">
+				{{ form_label(contactForm.subject) }}
+				{{ form_widget(contactForm.subject, {'attr': {'type': 'text'}}) }}
+			</div>
+			<div class="mb-3">
+				{{ form_label(contactForm.message) }}
+				{{ form_widget(contactForm.message) }}
+			</div>
+			<div class="button-container">
+				{% if app.user %}
+					{{ form_widget(contactForm.send, {'attr': {'class': 'btn btn-primary mt-3'}}) }}
+				{% else %}
+					<a href="{{ path('app_register') }}" class="btn btn-primary mt-3">
+						Se connecter pour envoyer
+					</a>
+				{% endif %}
+			</div>
+			{{ form_end(contactForm) }}
+		{% else %}
+			<p>Vous devez être connecté pour envoyer un message.</p>
+			<a href="{{ path('app_login') }}" class="btn btn-primary mt-3">
+				Se connecter
+			</a>
+		{% endif %}
 	</div>
+
 	{% block stylesheets %}
 		<link rel="stylesheet" href="{{ asset('css/contact/index.css') }}">
 	{% endblock %}
