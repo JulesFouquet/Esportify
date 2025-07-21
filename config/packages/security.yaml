@@ -24,6 +24,7 @@ security:
                 lifetime: 604800
                 path: /
                 always_remember_me: true
+                csrf_protection: true
 
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }

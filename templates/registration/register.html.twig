@@ -42,7 +42,7 @@
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
 const flashMessages = document.querySelectorAll('.flash-message');
-flashMessages.forEach((msg, index) => { // petit décalage pour éviter qu'ils disparaissent tous en même temps si plusieurs
+flashMessages.forEach((msg, index) => {
 setTimeout(() => {
 msg.style.opacity = '0';
 msg.style.transform = 'translateY(20px)';
