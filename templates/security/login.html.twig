@@ -24,14 +24,19 @@
 
 		<label for="inputPassword">Mot de passe</label>
 		<input type="password" name="password" id="inputPassword" autocomplete="current-password" required>
-		<p>Tu n'as pas de compte ?
-			<a href="{{ path('app_register') }}">S'inscrire</p>
-			<input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-			<button class="btn" type="submit">
-				Se connecter</button>
+		<input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+		<p>
+			Tu n'as pas de compte ?
+			<a href="{{ path('app_register') }}">S'inscrire</a>
 		</p>
+
+		<button class="btn" type="submit">
+			Se connecter
+		</button>
 	</form>
+
 	{% block stylesheets %}
 		<link rel="stylesheet" href="{{ asset('css/security/login.css') }}">
 	{% endblock %}
