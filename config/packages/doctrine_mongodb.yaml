@@ -3,15 +3,15 @@ doctrine_mongodb:
     auto_generate_hydrator_classes: true
     connections:
         default:
-            server: '%env(resolve:MONGODB_URL)%'
+            server: "%env(resolve:MONGODB_URL)%"
             options: {}
-    default_database: '%env(resolve:MONGODB_DB)%'
+    default_database: "%env(resolve:MONGO_DB)%"
     document_managers:
         default:
             auto_mapping: true
             mappings:
                 App:
-                    dir: '%kernel.project_dir%/src/Document'
+                    dir: "%kernel.project_dir%/src/Document"
                     prefix: 'App\Document'
 
 when@prod:
