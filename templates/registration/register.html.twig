@@ -33,6 +33,9 @@
 		{{ form_label(registrationForm.agreeTerms) }}
 	</div>
 
+	{# Explicitement afficher le token CSRF #}
+	{{ form_row(registrationForm._token) }}
+
 	<button type="submit" class="btn btn-primary">Inscription</button>
 	{{ form_end(registrationForm) }}
 
