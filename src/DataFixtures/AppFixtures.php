@@ -23,7 +23,7 @@ class AppFixtures extends Fixture
         $admin = new User();
         $admin->setEmail('admin@esportify.com');
         $admin->setPseudo('Admin');
-        $admin->setRoles(['ROLE_ADMIN', 'ROLE_ORGANISATEUR', 'ROLE_USER']); // admin a tous les droits
+        $admin->setRoles(['ROLE_ADMIN', 'ROLE_ORGANISATEUR', 'ROLE_USER']); 
         $admin->setPassword($this->passwordHasher->hashPassword($admin, 'adminpass'));
         $admin->setIsVerified(true);
         $manager->persist($admin);
@@ -32,7 +32,7 @@ class AppFixtures extends Fixture
         $organisateur = new User();
         $organisateur->setEmail('orga@esportify.com');
         $organisateur->setPseudo('Orga');
-        $organisateur->setRoles(['ROLE_ORGANISATEUR', 'ROLE_USER']); // organisateur + user
+        $organisateur->setRoles(['ROLE_ORGANISATEUR', 'ROLE_USER']); 
         $organisateur->setPassword($this->passwordHasher->hashPassword($organisateur, 'orgapass'));
         $organisateur->setIsVerified(true);
         $manager->persist($organisateur);
@@ -46,7 +46,7 @@ class AppFixtures extends Fixture
         $user->setIsVerified(true);
         $manager->persist($user);
 
-        // Création de quelques événements approuvés liés à l'organisateur
+        // Création de quelques événements déjà approuvés
         for ($i = 1; $i <= 3; $i++) {
             $event = new Event();
             $event->setTitle('Événement de test ' . $i);
@@ -63,7 +63,7 @@ class AppFixtures extends Fixture
             $event->setOrganizer($organisateur);
             $event->setGame('Jeu ' . $i);
             $event->setImage(null);
-            $event->setIsAdminApproved(true); // si besoin
+            $event->setIsAdminApproved(true); 
             $manager->persist($event);
         }
 

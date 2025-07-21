@@ -61,7 +61,7 @@
 							{% endif %}
 
 							{% if is_granted('ROLE_ORGANISATEUR') and event.isStarted and now >= endTime and not event.isFinished %}
-								<form method="POST" action="{{ path('event_finish', {'id': event.id}) }}">
+								<form method="POST" action="{{ path('organisateur_event_finish', {'id': event.id}) }}">
 									<input type="hidden" name="_token" value="{{ csrf_token('finish_event' ~ event.id) }}">
 									<button type="submit" class="btn btn-danger btn-sm">Terminer</button>
 								</form>
@@ -157,7 +157,7 @@
 												{{ participant.pseudo }}
 											</div>
 											<div class="participant-action">
-												<form method="POST" action="{{ path('organizer_event_refuse', {'id': event.id, 'userId': participant.id}) }}" style="margin: 0;">
+												<form method="POST" action="{{ path('organisateur_event_refuse', {'id': event.id, 'userId': participant.id}) }}" style="margin: 0;">
 													<input type="hidden" name="_token" value="{{ csrf_token('refuse_' ~ event.id ~ '_' ~ participant.id) }}">
 													<button type="submit" class="btn btn-outline-danger btn-sm">Refuser</button>
 												</form>

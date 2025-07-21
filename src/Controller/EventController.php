@@ -260,8 +260,8 @@ class EventController extends AbstractController
     }
 
     // Terminer un événement (organisateur)
-    #[Route('/event/{id}/finish', name: 'organizer_event_finish')]
-    #[IsGranted('ROLE_ORGANIZER')]
+    #[Route('/event/{id}/finish', name: 'organisateur_event_finish')]
+    #[IsGranted('ROLE_ORGANISATEUR')]
     public function finishEvent(Event $event, EntityManagerInterface $em): RedirectResponse
     {
         if ($event->isStarted() && !$event->isFinished()) {
@@ -272,21 +272,21 @@ class EventController extends AbstractController
             $this->addFlash('error', 'Impossible de terminer cet événement.');
         }
 
-        return $this->redirectToRoute('app_profile');
+        return $this->redirectToRoute('organisateur_events');
     }
 
     // Refuser la participation d'un joueur (organisateur)
-    #[Route('/event/{id}/refuse/{userId}', name: 'organizer_event_refuse')]
+    #[Route('/event/{id}/refuse/{userId}', name: 'organisateur_event_refuse')]
     #[IsGranted('ROLE_ORGANISATEUR')]
     public function refuseParticipant(Event $event, int $userId, UserRepository $userRepository, EntityManagerInterface $em): RedirectResponse
     {
         $userToBan = $userRepository->find($userId);
         if (!$userToBan) {
             $this->addFlash('error', 'Utilisateur introuvable.');
-            return $this->redirectToRoute('app_profile');
+            return $this->redirectToRoute('organisateur_events');
         }
 
-        // Ajouter un bannissement temporaire à l'événement
+        // Ajouter un bannissement à l'événement
         $eventBan = new EventBan();
         $eventBan->setUser($userToBan);
         $eventBan->setEvent($event);
@@ -301,6 +301,6 @@ class EventController extends AbstractController
 
         $this->addFlash('success', 'Participation refusée et utilisateur banni.');
 
-        return $this->redirectToRoute('app_profile');
+        return $this->redirectToRoute('organisateur_events');
     }
 }
