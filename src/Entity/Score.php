@@ -68,40 +68,4 @@ class Score
 
         return $this;
     }
-
-    /**
-     * Pas mis en place finalement reste une idée
-     *
-     * @param User $player
-     * @param Event $event
-     * @param int $rank 
-     * @return self
-     */
-    public static function createScoreForPlayer(User $player, Event $event, int $rank): self
-    {
-        $score = new self();
-        $score->setPlayer($player);
-        $score->setEvent($event);
-
-        $basePoints = 5;
-        $bonusPoints = 0;
-
-        switch ($rank) {
-            case 1:
-                $bonusPoints = 15;
-                break;
-            case 2:
-                $bonusPoints = 10;
-                break;
-            case 3:
-                $bonusPoints = 5;
-                break;
-            default:
-                $bonusPoints = 0;
-        }
-
-        $score->setPoints($basePoints + $bonusPoints);
-
-        return $score;
-    }
 }
