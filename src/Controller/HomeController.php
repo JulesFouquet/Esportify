@@ -37,16 +37,4 @@ class HomeController extends AbstractController
 
         return $this->redirectToRoute('app_home');
     }
-
-    // Ajout : test simple pour vérifier que la session fonctionne
-    #[Route('/test-session', name: 'app_test_session')]
-    public function testSession(Request $request): Response
-    {
-        $session = $request->getSession();
-
-        $session->set('foo', 'bar');
-        $value = $session->get('foo');
-
-        return new Response('Session test value: ' . $value);
-    }
 }
