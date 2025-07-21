@@ -1,4 +1,6 @@
 {
+    "name": "jules/esportify",
+    "description": "Plateforme e-sport Symfony",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
