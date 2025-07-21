@@ -33,15 +33,14 @@ class SecurityController extends AbstractController
     #[Route(path: '/logout', name: 'app_logout')]
     public function logout(): void
     {
-        throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
+        throw new \LogicException('Cette méthode peut être vide.');
     }
 
     // Route temporaire pour tester le CSRF
     #[Route('/csrf-test', name: 'csrf_test')]
     public function csrfTest(CsrfTokenManagerInterface $csrfTokenManager): Response
-    {
-        $token = $csrfTokenManager->getToken('authenticate')->getValue();
-
-        return new Response('Token CSRF généré : ' . $token);
-    }
+{
+    $env = $this->getParameter('kernel.environment');
+    return new Response('Environnement actuel : ' . $env);
+}
 }
