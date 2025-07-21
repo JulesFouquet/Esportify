@@ -20,7 +20,14 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
     use TargetPathTrait;
 
     public const LOGIN_ROUTE = 'app_login';
+public function testSession(Request $request): Response
+{
+    $session = $request->getSession();
+    $session->set('foo', 'bar');
+    $value = $session->get('foo');
 
+    return new Response('Session test value: ' . $value);
+}
     public function __construct(private UrlGeneratorInterface $urlGenerator)
     {
     }
